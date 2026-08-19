@@ -1,0 +1,6 @@
+[submodule "esp7600_Recv"]
+	path = esp7600_Recv
+	url = git@github.com:dazemc/esp7600_Recv.git
+[submodule "esp7600_Send"]
+	path = esp7600_Send
+	url = git@github.com:dazemc/esp7600_Send.git
