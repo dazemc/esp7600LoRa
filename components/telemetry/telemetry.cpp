@@ -21,14 +21,12 @@ const char *ignitionToString(Ignition ign) {
 
 void telemetryTask(void *arg) {
   while (true) {
-    while (true) {
-      if (xSemaphoreTake(telemetrySemaphore, portMAX_DELAY)) {
-        EventLoRaTX txEvent;
-        txEvent.type = EVENT_LORA_TX;
-        txEvent.vehicle = vehicleState;
+    if (xSemaphoreTake(telemetrySemaphore, portMAX_DELAY)) {
+      EventLoRaTX txEvent;
+      txEvent.type = EVENT_LORA_TX;
+      txEvent.vehicle = vehicleState;
 
-        xQueueSend(loraTXQueue, &txEvent, portMAX_DELAY);
-      }
+      xQueueSend(loraTXQueue, &txEvent, portMAX_DELAY);
     }
   }
 }
