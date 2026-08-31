@@ -1,0 +1,8 @@
+idf_component_register(
+  SRCS
+  "telemetry.cpp"
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  events
+  event_bus)

@@ -1,0 +1,12 @@
+idf_component_register(
+  SRCS
+  "voltage.cpp"
+  INCLUDE_DIRS
+  "."
+  PRIV_REQUIRES
+  esp_adc
+  freertos
+  log
+  events
+  types
+  event_bus)

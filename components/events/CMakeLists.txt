@@ -1,0 +1,10 @@
+idf_component_register(
+  SRCS
+  ""
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  types
+  PRIV_REQUIRES
+  events
+  serial)

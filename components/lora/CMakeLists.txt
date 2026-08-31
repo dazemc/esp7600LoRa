@@ -1,0 +1,11 @@
+idf_component_register(
+  SRCS
+  "lora.cpp"
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  LoRa
+  PRIV_REQUIRES
+  arduino-esp32
+  events
+  event_bus)

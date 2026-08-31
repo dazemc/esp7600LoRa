@@ -1,0 +1,9 @@
+idf_component_register(
+  SRCS
+  "relay.cpp"
+  INCLUDE_DIRS
+  "."
+  PRIV_REQUIRES
+  arduino-esp32
+  events
+  event_bus)

@@ -1,0 +1,11 @@
+idf_component_register(
+  SRCS
+  "serial.cpp"
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  serial
+  events
+  telemetry
+  PRIV_REQUIRES
+  arduino-esp32)
