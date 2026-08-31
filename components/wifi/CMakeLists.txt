@@ -1,9 +1,8 @@
 idf_component_register(
   SRCS
-  "telemetry.cpp"
+  "wifi.cpp"
   INCLUDE_DIRS
   "."
+  PRIV_REQUIRES
   REQUIRES
-  events
-  event_bus
-  lora)
+  arduino-esp32)

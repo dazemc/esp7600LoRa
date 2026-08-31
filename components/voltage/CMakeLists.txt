@@ -9,4 +9,5 @@ idf_component_register(
   log
   events
   types
-  event_bus)
+  event_bus
+  telemetry)

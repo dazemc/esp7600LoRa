@@ -16,5 +16,4 @@
 #define ADC_CHANNEL ADC_CHANNEL_4
 #define ADC_ATTEN ADC_ATTEN_DB_12
 
-void initVoltageMonitor();
 void voltageMonitorTask(void *arg);

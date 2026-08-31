@@ -5,12 +5,13 @@
 #include "event_bus.h"
 #include "types.h"
 #include "voltage.h"
+#include "telemetry.h"
 
 static adc_oneshot_unit_handle_t adc_handle;
 static adc_oneshot_unit_init_cfg_t init_config{};
 static adc_cali_handle_t cali_handle;
 
-void initVoltageMonitor() {
+static void initVoltageMonitor() {
   init_config.unit_id = ADC_UNIT;
 
   ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config, &adc_handle));
@@ -34,7 +35,7 @@ void initVoltageMonitor() {
       adc_cali_create_scheme_line_fitting(&cali_config, &cali_handle));
 }
 void voltageMonitorTask(void *arg) {
-
+  initVoltageMonitor();
   while (true) {
     int raw;
     int voltage_mv;

@@ -1,14 +1,19 @@
 #pragma once
 
-#include <LoRa.h>
+#include "freertos/FreeRTOS.h"
 
-#define FREQ 915E6
-#define CS 18
-#define SCK 5
-#define MOSI 27
-#define MISO 19
-#define RESET 14
-#define DID0 26
+inline constexpr long LORA_FREQ = 915E6;
+inline constexpr int LORA_CS = 18;
+inline constexpr int LORA_SCK = 5;
+inline constexpr int LORA_MOSI = 27;
+inline constexpr int LORA_MISO = 19;
+inline constexpr int LORA_RST = 14;
+inline constexpr int LORA_DIO0 = 26;
 
 void initLoRa();
 void sendLoRaTask(void *arg);
+void recvLoRaTask(void *arg);
+void onReceive(int packetSize);
+
+extern QueueHandle_t loraTXQueue;
+extern QueueHandle_t loraRXQueue;

@@ -1,13 +1,19 @@
 #include <Arduino.h>
+#include "LoRa.h"
 #include "lora.h"
 #include "events.h"
 #include "event_bus.h"
+#include "display.h"
+#include "serial.h"
+
+QueueHandle_t loraTXQueue = nullptr;
+QueueHandle_t loraRXQueue = nullptr;
 
 void initLoRa() {
-  SPI.begin(SCK, MISO, MOSI, CS);
-  LoRa.setPins(CS, RESET, DID0);
+  SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
+  LoRa.setPins(LORA_CS, LORA_RST, LORA_DIO0);
 
-  if (!LoRa.begin(FREQ)) {
+  if (!LoRa.begin(LORA_FREQ)) {
     Serial.println("LoRa failed");
     return;
   }
@@ -16,13 +22,13 @@ void initLoRa() {
 
 void sendLoRaTask(void *arg) {
 
-  EventLoRa event = {};
+  EventLoRaTX event = {};
+  EventDisplay displayEvent = {};
+  EventSerial serialEvent = {};
   while (true) {
     if (xQueueReceive(loraTXQueue, &event, portMAX_DELAY)) {
       switch (event.type) {
       case EVENT_LORA_SEND:
-      case EVENT_LORA_RX:
-      case EVENT_LORA_RECV:
         break;
       case EVENT_LORA_TX: {
         LoRaSend packet{};
@@ -34,14 +40,66 @@ void sendLoRaTask(void *arg) {
         // String str = String(event.voltageData.battery, 2);
         // snprintf(event.loraSend.voltage, sizeof(event.loraSend.voltage),
         // "%.2f", event.voltageData.battery);
-        event.type = EVENT_LORA_SEND;
-        event.loraSend = packet;
-        xQueueSend(displayQueue, &event, portMAX_DELAY);
-        xQueueSend(serialQueue, &event, portMAX_DELAY);
+        displayEvent.type = EVENT_DISPLAY_LORA_TX;
+        displayEvent.loraTX.loraSend = packet;
+        serialEvent.type = EVENT_SERIAL_LORA_TX;
+        serialEvent.loraTX.loraSend = packet;
+        // event.loraSend = packet;
+        xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
+        xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
         vTaskDelay(pdMS_TO_TICKS(1000));
         break;
       }
       }
     }
+  }
+}
+
+void recvLoRaTask(void *arg) {
+  EventLoRaRX event{};
+  EventDisplay displayEvent{};
+  EventSerial serialEvent{};
+  LoRa.onReceive(onReceive);
+  LoRa.receive();
+  while (true) {
+    if (xQueueReceive(loraRXQueue, &event, portMAX_DELAY)) {
+      switch (event.type) {
+      case EVENT_LORA_RECV:
+        break;
+      case EVENT_LORA_RX: {
+        if (event.loraRecv.length != sizeof(LoRaSend)) {
+          Serial.printf("Invalid packet size: %d\n", event.loraRecv.length);
+          continue;
+        }
+
+        LoRaRecv packet{};
+
+        memcpy(&packet, event.loraRecv.data, sizeof(packet));
+        displayEvent.type = EVENT_DISPLAY_LORA_RX;
+        displayEvent.loraRX.loraRecv = packet;
+        serialEvent.type = EVENT_SERIAL_LORA_RX;
+        serialEvent.loraRX.loraRecv = packet;
+        xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
+        xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
+      }
+      }
+    }
+  }
+}
+
+void onReceive(int packetSize) {
+  if (packetSize) {
+    EventLoRaRX event{};
+    event.type = EVENT_LORA_RX;
+    event.loraRecv.length = 0;
+    event.loraRecv.rssi = LoRa.packetRssi();
+    event.loraRecv.snr = LoRa.packetSnr();
+
+    while (LoRa.available() &&
+           event.loraRecv.length < sizeof(event.loraRecv.data)) {
+      event.loraRecv.data[event.loraRecv.length++] = LoRa.read();
+    }
+
+    xQueueSend(loraRXQueue, &event, 0);
   }
 }

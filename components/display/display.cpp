@@ -3,6 +3,7 @@
 #include "events.h"
 #include "event_bus.h"
 
+QueueHandle_t displayQueue = nullptr;
 DisplayData displayData{};
 
 static ssd1306_handle_t displayHandle = nullptr;
@@ -47,17 +48,18 @@ void initDisplay() {
 }
 
 void displayTask(void *arg) {
-  EventLoRa event;
+  initDisplay();
+  EventDisplay event;
 
   while (true) {
     if (xQueueReceive(displayQueue, &event, portMAX_DELAY)) {
       switch (event.type) {
 
-      case EVENT_LORA_SEND: {
+      case EVENT_DISPLAY_LORA_TX: {
         const char *prepend = "Sending:\nVoltage: ";
 
         snprintf(displayData.message, sizeof(displayData.message), "%s%.4f",
-                 prepend, event.loraSend.vehicle.voltageData.battery);
+                 prepend, event.loraTX.vehicle.voltageData.battery);
 
         ssd1306_clear(displayHandle);
 
@@ -69,8 +71,27 @@ void displayTask(void *arg) {
         break;
       }
 
-      default:
-        Serial.println("Waiting to display...");
+      case EVENT_DISPLAY_LORA_RX: {
+        char message[128];
+        int offset = 0;
+        const char *prepend = "Received;\n";
+        offset += snprintf(
+            message + offset, sizeof(message) - offset, "%s%s%.4f\n", prepend,
+            "VOLTAGE: ", event.loraRX.vehicle.voltageData.battery);
+        offset +=
+            snprintf(message + offset, sizeof(message) - offset, "%s%.4f\n",
+                     "ADC: ", event.loraRX.vehicle.voltageData.adc);
+        offset +=
+            snprintf(message + offset, sizeof(message) - offset, "%s%.4f\n",
+                     "RAW: ", event.loraRX.vehicle.voltageData.raw);
+        ssd1306_clear(displayHandle);
+        ssd1306_draw_text(displayHandle, oledX, oledY, message, true);
+        ssd1306_display(displayHandle);
+        break;
+      }
+
+      case EVENT_DISPLAY_LORA_WIFI:
+      case EVENT_DISPLAY_LORA_TOGGLE:
         break;
       }
     }

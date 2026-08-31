@@ -18,3 +18,5 @@ void relayTask(void *arg);
 void initRelay();
 void relayCycleTest();
 bool relayState(uint8_t pin);
+
+extern QueueHandle_t relayQueue;

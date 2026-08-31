@@ -1,6 +1,31 @@
 #pragma once
 
 #include "stdint.h"
+#include "freertos/FreeRTOS.h"
+
+struct TaskConfig {
+  TaskFunction_t function;
+  const char *name;
+  uint32_t stackSize;
+  void *arg;
+  UBaseType_t priority;
+  TaskHandle_t *handle;
+};
+
+struct QueueConfig {
+  QueueHandle_t *handle;
+  size_t length;
+  size_t itemSize;
+};
+
+struct SemaphoreConfig {
+  SemaphoreHandle_t *handle;
+};
+
+struct EventConfig {
+  const TaskConfig taskConfig;
+  const QueueConfig *queueConfig = nullptr;
+};
 
 struct VoltageData {
   float raw;
@@ -8,7 +33,7 @@ struct VoltageData {
   float battery;
 };
 
-struct LoRaPacket {
+struct LoRaRecv {
   uint8_t data[256];
   int length;
   int rssi;
@@ -40,28 +65,8 @@ struct LoRaSend {
 
 struct Telemetry {
   union {
-    LoRaPacket loraRecv;
+    LoRaRecv loraRecv;
     VehicleState vehicle;
     LoRaSend loraSend;
   };
-};
-
-enum EventWiFiType {
-  EVENT_WIFI,
-};
-
-enum EventToggleType {
-  EVENT_TOGGLE_HEADLIGHTS,
-  EVENT_TOGGLE_ACC,
-  EVENT_TOGGLE_RUNNINGLIGHTS,
-  EVENT_TOGGLE_HEATER,
-  EVENT_TOGGLE_GLOWPLUGS,
-  EVENT_TOGGLE_IGN,
-};
-
-enum EventLoRaType {
-  EVENT_LORA_TX,
-  EVENT_LORA_RX,
-  EVENT_LORA_SEND,
-  EVENT_LORA_RECV,
 };

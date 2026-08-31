@@ -3,6 +3,9 @@
 #include "events.h"
 #include "event_bus.h"
 #include "types.h"
+#include "telemetry.h"
+
+QueueHandle_t relayQueue = nullptr;
 
 void initRelay() {
   for (int pin : relayPins) {

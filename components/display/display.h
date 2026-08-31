@@ -10,7 +10,6 @@
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 64
 
-void initDisplay();
 void displayTask(void *arg);
 
 struct DisplayData {
@@ -21,3 +20,4 @@ struct DisplayData {
 };
 
 extern DisplayData displayData;
+extern QueueHandle_t displayQueue;

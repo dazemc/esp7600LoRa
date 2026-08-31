@@ -8,4 +8,6 @@ idf_component_register(
   PRIV_REQUIRES
   arduino-esp32
   events
-  event_bus)
+  event_bus
+  serial
+  display)

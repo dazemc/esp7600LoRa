@@ -2,6 +2,9 @@
 #include "types.h"
 #include "events.h"
 #include "event_bus.h"
+#include "lora.h"
+
+SemaphoreHandle_t telemetrySemaphore = nullptr;
 
 const char *ignitionToString(Ignition ign) {
   switch (ign) {
@@ -20,7 +23,7 @@ void telemetryTask(void *arg) {
   while (true) {
     while (true) {
       if (xSemaphoreTake(telemetrySemaphore, portMAX_DELAY)) {
-        EventLoRa txEvent;
+        EventLoRaTX txEvent;
         txEvent.type = EVENT_LORA_TX;
         txEvent.vehicle = vehicleState;
 
