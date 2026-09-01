@@ -3,21 +3,10 @@
 #include "events.h"
 #include "event_bus.h"
 #include "lora.h"
+#include "serial.h"
+#include "utils.h"
 
 SemaphoreHandle_t telemetrySemaphore = nullptr;
-
-const char *ignitionToString(Ignition ign) {
-  switch (ign) {
-  case OFF:
-    return "OFF";
-  case ON:
-    return "ON";
-  case START:
-    return "START";
-  default:
-    return "UNKNOWN";
-  }
-}
 
 void telemetryTask(void *arg) {
   while (true) {
@@ -27,6 +16,14 @@ void telemetryTask(void *arg) {
       txEvent.vehicle = vehicleState;
 
       xQueueSend(loraTXQueue, &txEvent, portMAX_DELAY);
+      if (DEBUG) {
+        EventSerial event{};
+        event.type = EVENT_SERIAL_DEBUG;
+        UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
+        debugRemainingStackSize("telemetry", event.debug.remainingStackMsg,
+                                remaining);
+        xQueueSend(serialQueue, &event, portMAX_DELAY);
+      }
     }
   }
 }

@@ -2,6 +2,8 @@
 #include "types.h"
 #include "events.h"
 #include "event_bus.h"
+#include "utils.h"
+#include "serial.h"
 
 QueueHandle_t displayQueue = nullptr;
 DisplayData displayData{};
@@ -94,6 +96,17 @@ void displayTask(void *arg) {
       case EVENT_DISPLAY_LORA_TOGGLE:
         break;
       }
+    }
+    if (DEBUG) {
+      EventSerial eventDebug{};
+      eventDebug.type = EVENT_SERIAL_DEBUG;
+      UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
+      debugRemainingStackSize("display", eventDebug.debug.remainingStackMsg,
+                              remaining);
+
+      debugRemainingQueue("display", eventDebug.debug.remainingQueueMsg,
+                          uxQueueMessagesWaiting(displayQueue));
+      xQueueSend(serialQueue, &eventDebug, portMAX_DELAY);
     }
   }
 }

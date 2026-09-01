@@ -4,6 +4,8 @@ idf_component_register(
   INCLUDE_DIRS
   "."
   PRIV_REQUIRES
+  serial
+  utils
   esp_adc
   freertos
   log

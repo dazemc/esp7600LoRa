@@ -6,4 +6,6 @@ idf_component_register(
   REQUIRES
   events
   event_bus
-  lora)
+  lora
+  serial
+  utils)

@@ -37,6 +37,12 @@ enum EventSerialType {
   EVENT_SERIAL_LORA_TX,
   EVENT_SERIAL_LORA_TOGGLE,
   EVENT_SERIAL_LORA_WIFI,
+  EVENT_SERIAL_DEBUG,
+};
+
+struct EventDebug {
+  char remainingStackMsg[64];
+  char remainingQueueMsg[64];
 };
 
 struct EventToggle {
@@ -74,5 +80,6 @@ struct EventSerial {
     EventLoRaTX loraTX;
     EventLoRaRX loraRX;
     EventToggle toggle;
+    EventDebug debug;
   };
 };

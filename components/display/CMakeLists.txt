@@ -9,4 +9,6 @@ idf_component_register(
   arduino-esp32
   types
   events
-  event_bus)
+  event_bus
+  utils
+  serial)

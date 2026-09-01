@@ -1,10 +1,12 @@
 #include <Arduino.h>
+#include "freertos/FreeRTOS.h"
 #include "LoRa.h"
 #include "lora.h"
 #include "events.h"
 #include "event_bus.h"
 #include "display.h"
 #include "serial.h"
+#include "utils.h"
 
 QueueHandle_t loraTXQueue = nullptr;
 QueueHandle_t loraRXQueue = nullptr;
@@ -21,16 +23,15 @@ void initLoRa() {
 }
 
 void sendLoRaTask(void *arg) {
-
   EventLoRaTX event = {};
-  EventDisplay displayEvent = {};
-  EventSerial serialEvent = {};
   while (true) {
     if (xQueueReceive(loraTXQueue, &event, portMAX_DELAY)) {
       switch (event.type) {
       case EVENT_LORA_SEND:
         break;
       case EVENT_LORA_TX: {
+        EventSerial serialEvent = {};
+        EventDisplay displayEvent = {};
         LoRaSend packet{};
         packet.vehicle = event.vehicle;
         packet.wifi = false;
@@ -50,6 +51,16 @@ void sendLoRaTask(void *arg) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         break;
       }
+      }
+      if (DEBUG) {
+        EventSerial event{};
+        event.type = EVENT_SERIAL_DEBUG;
+        UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
+        debugRemainingStackSize("LoRaTX", event.debug.remainingStackMsg,
+                                remaining);
+        debugRemainingQueue("LoRaTX", event.debug.remainingQueueMsg,
+                            uxQueueMessagesWaiting(loraTXQueue));
+        xQueueSend(serialQueue, &event, portMAX_DELAY);
       }
     }
   }
@@ -83,6 +94,16 @@ void recvLoRaTask(void *arg) {
         xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
       }
       }
+      if (DEBUG) {
+        EventSerial event{};
+        event.type = EVENT_SERIAL_DEBUG;
+        UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
+        debugRemainingStackSize("LoRaRX", event.debug.remainingStackMsg,
+                                remaining);
+        debugRemainingQueue("LoRaRX", event.debug.remainingQueueMsg,
+                            uxQueueMessagesWaiting(loraRXQueue));
+        xQueueSend(serialQueue, &event, portMAX_DELAY);
+      }
     }
   }
 }
@@ -99,7 +120,6 @@ void onReceive(int packetSize) {
            event.loraRecv.length < sizeof(event.loraRecv.data)) {
       event.loraRecv.data[event.loraRecv.length++] = LoRa.read();
     }
-
     xQueueSend(loraRXQueue, &event, 0);
   }
 }

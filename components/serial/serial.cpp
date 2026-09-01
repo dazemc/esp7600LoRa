@@ -1,11 +1,23 @@
 #include "serial.h"
 #include "events.h"
 #include "event_bus.h"
-#include "types.h"
-#include "telemetry.h"
+#include "utils.h"
 #include <Arduino.h>
 
 QueueHandle_t serialQueue = nullptr;
+
+const char *ignitionToString(Ignition ign) {
+  switch (ign) {
+  case OFF:
+    return "OFF";
+  case ON:
+    return "ON";
+  case START:
+    return "START";
+  default:
+    return "UNKNOWN";
+  }
+}
 
 static void initSerial() {
   Serial.begin(BAUD);
@@ -13,7 +25,7 @@ static void initSerial() {
   Serial.println("Serial started");
 }
 
-void printSerialTask(void *arg) {
+void serialTask(void *arg) {
   initSerial();
   EventSerial event;
 
@@ -31,6 +43,7 @@ void printSerialTask(void *arg) {
                       event.loraTX.vehicle.runningLights);
         Serial.printf("GLOWPLUGS: %d\n", event.loraTX.vehicle.glowPlugs);
         Serial.printf("HEATER: %d\n", event.loraTX.vehicle.heater);
+        Serial.println();
         break;
       }
       case EVENT_SERIAL_LORA_RX:
@@ -41,6 +54,18 @@ void printSerialTask(void *arg) {
         break;
       case EVENT_SERIAL_LORA_WIFI:
       case EVENT_SERIAL_LORA_TOGGLE:
+        break;
+      case EVENT_SERIAL_DEBUG:
+        UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
+        size_t remainingBytes = remaining * sizeof(StackType_t);
+        Serial.print(event.debug.remainingStackMsg);
+        if (event.debug.remainingQueueMsg[0] != '\0') {
+          Serial.print(event.debug.remainingQueueMsg);
+        }
+        Serial.printf("DEBUG: serial stack size remaining: %zu bytes\n",
+                      remainingBytes);
+        Serial.printf("DEBUG: serial queue size: %d\n",
+                      uxQueueMessagesWaiting(serialQueue));
         break;
       }
     }

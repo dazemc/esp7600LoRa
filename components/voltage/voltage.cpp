@@ -6,6 +6,8 @@
 #include "types.h"
 #include "voltage.h"
 #include "telemetry.h"
+#include "utils.h"
+#include "serial.h"
 
 static adc_oneshot_unit_handle_t adc_handle;
 static adc_oneshot_unit_init_cfg_t init_config{};
@@ -53,5 +55,13 @@ void voltageMonitorTask(void *arg) {
     // printf("Raw: %d\nADC: %.3f V\nBattery: %.2f V\n", raw, adc_voltage,
     // battery_voltage);
     vTaskDelay(pdMS_TO_TICKS(1000));
+    if (DEBUG) {
+      EventSerial event{};
+      event.type = EVENT_SERIAL_DEBUG;
+      UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
+      debugRemainingStackSize("voltage", event.debug.remainingStackMsg,
+                              remaining);
+      xQueueSend(serialQueue, &event, portMAX_DELAY);
+    }
   }
 }
