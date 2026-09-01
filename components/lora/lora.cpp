@@ -112,9 +112,9 @@ void checkPacketId(uint8_t packetId) {
   if (havePacket) {
     uint8_t expected = (lastPacketId + 1) & 0x07;
     if (packetId != expected) {
-      Serial.printf(
-          "\033[1;33mWARNING: dropped packet(s) expeced %d but got %d\033[0m\n",
-          expected, packetId);
+      Serial.printf("\033[1;33mWARNING: dropped packet(s) expected %d but got "
+                    "%d\033[0m\n",
+                    expected, packetId);
     }
     lastPacketId = packetId;
   } else {
