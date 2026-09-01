@@ -51,18 +51,14 @@ struct EventToggle {
 
 struct EventLoRaTX {
   EventLoRaTXType type;
-  union {
-    VehicleState vehicle;
-    LoRaSend loraSend;
-  };
+  bool isVehicle;
+  LoRaSend loraSend;
 };
 
 struct EventLoRaRX {
   EventLoRaRXType type;
-  union {
-    VehicleState vehicle;
-    LoRaRecv loraRecv;
-  };
+  LoRaRecv loraRecv;
+  LoRaSend loraSend;
 };
 
 struct EventDisplay {

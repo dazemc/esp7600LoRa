@@ -17,3 +17,4 @@ void onReceive(int packetSize);
 
 extern QueueHandle_t loraTXQueue;
 extern QueueHandle_t loraRXQueue;
+extern bool isVehicle;

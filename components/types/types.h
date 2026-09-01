@@ -58,9 +58,16 @@ struct VehicleState {
 
 extern VehicleState vehicleState;
 
+// this is really just to check for dropped packets so 8 is enough
+struct Header {
+  uint8_t packetId : 3;
+} __attribute__((packed));
+
 struct LoRaSend {
+  Header header;
   VehicleState vehicle;
-  bool wifi;
+  bool isWifi;
+  bool isVehicle;
 } __attribute__((packed));
 
 struct Telemetry {

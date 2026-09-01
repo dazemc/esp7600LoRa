@@ -13,7 +13,8 @@ void initEventBus(const EventConfig *events, size_t count) {
       *queueConfig->handle =
           xQueueCreate(queueConfig->length, queueConfig->itemSize);
       if (*queueConfig->handle == nullptr) {
-        Serial.println("Failed to create event queue");
+        Serial.println(
+            "\033[1;31mERROR: Failed to create event queue\033[0m\n");
         abort();
       }
     }

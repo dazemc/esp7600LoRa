@@ -10,6 +10,10 @@
 
 QueueHandle_t loraTXQueue = nullptr;
 QueueHandle_t loraRXQueue = nullptr;
+bool isVehicle{};
+static uint8_t packetId = 0;
+static uint8_t lastPacketId;
+static bool havePacket = false;
 
 void initLoRa() {
   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
@@ -22,6 +26,43 @@ void initLoRa() {
   Serial.println("LoRa started");
 }
 
+void displayLoRa(LoRaSend packet) {
+  EventDisplay displayEvent = {};
+  displayEvent.type = EVENT_DISPLAY_LORA_TX;
+  displayEvent.loraTX.loraSend = packet;
+  xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
+}
+
+void serialLoRa(LoRaSend packet) {
+  EventSerial serialEvent = {};
+  serialEvent.type = EVENT_SERIAL_LORA_TX;
+  serialEvent.loraTX.loraSend = packet;
+  xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
+}
+
+void sendPacket(LoRaSend packet) {
+  LoRa.beginPacket();
+  LoRa.write((uint8_t *)&packet, sizeof(packet));
+  LoRa.endPacket();
+  LoRa.receive();
+  displayLoRa(packet);
+  serialLoRa(packet);
+}
+
+uint8_t incrementPacketId() {
+  packetId = (packetId + 1) & 0x07;
+  return packetId;
+}
+
+void buildPacket(EventLoRaTX event) {
+  LoRaSend packet{};
+  packet.header.packetId = incrementPacketId();
+  packet.vehicle = event.loraSend.vehicle;
+  packet.isWifi = false;
+  packet.isVehicle = isVehicle;
+  sendPacket(packet);
+}
+
 void sendLoRaTask(void *arg) {
   EventLoRaTX event = {};
   while (true) {
@@ -30,26 +71,27 @@ void sendLoRaTask(void *arg) {
       case EVENT_LORA_SEND:
         break;
       case EVENT_LORA_TX: {
-        EventSerial serialEvent = {};
-        EventDisplay displayEvent = {};
-        LoRaSend packet{};
-        packet.vehicle = event.vehicle;
-        packet.wifi = false;
-        LoRa.beginPacket();
-        LoRa.write((uint8_t *)&packet, sizeof(packet));
-        LoRa.endPacket();
-        // String str = String(event.voltageData.battery, 2);
-        // snprintf(event.loraSend.voltage, sizeof(event.loraSend.voltage),
-        // "%.2f", event.voltageData.battery);
-        displayEvent.type = EVENT_DISPLAY_LORA_TX;
-        displayEvent.loraTX.loraSend = packet;
-        serialEvent.type = EVENT_SERIAL_LORA_TX;
-        serialEvent.loraTX.loraSend = packet;
-        // event.loraSend = packet;
-        xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
-        xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        break;
+        if (isVehicle) {
+          buildPacket(event);
+          break;
+        } else {
+          // test
+          LoRaSend packet{};
+          packet.header.packetId = incrementPacketId();
+          packet.vehicle = {
+              .voltageData = {},
+              .ign = OFF,
+              .headlights = true,
+              .acc = false,
+              .runningLights = false,
+              .heater = false,
+              .glowPlugs = false,
+          };
+          event.loraSend = packet;
+          // buildPacket(event);
+          sendPacket(packet);
+          break;
+        }
       }
       }
       if (DEBUG) {
@@ -63,6 +105,22 @@ void sendLoRaTask(void *arg) {
         xQueueSend(serialQueue, &event, portMAX_DELAY);
       }
     }
+  }
+}
+
+void checkPacketId(uint8_t packetId) {
+  if (havePacket) {
+    uint8_t expected = (lastPacketId + 1) & 0x07;
+    if (packetId != expected) {
+      Serial.printf(
+          "\033[1;33mWARNING: dropped packet(s) expeced %d but got %d\033[0m\n",
+          expected, packetId);
+    }
+    lastPacketId = packetId;
+  } else {
+    // so I don't continously set the bool
+    havePacket = true;
+    lastPacketId = packetId;
   }
 }
 
@@ -83,15 +141,17 @@ void recvLoRaTask(void *arg) {
           continue;
         }
 
-        LoRaRecv packet{};
+        LoRaSend packet{};
 
         memcpy(&packet, event.loraRecv.data, sizeof(packet));
+        checkPacketId(packet.header.packetId);
         displayEvent.type = EVENT_DISPLAY_LORA_RX;
-        displayEvent.loraRX.loraRecv = packet;
+        displayEvent.loraRX.loraSend = packet;
         serialEvent.type = EVENT_SERIAL_LORA_RX;
-        serialEvent.loraRX.loraRecv = packet;
+        serialEvent.loraRX.loraSend = packet;
         xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
         xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
+        break;
       }
       }
       if (DEBUG) {

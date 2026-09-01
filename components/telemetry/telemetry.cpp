@@ -13,7 +13,7 @@ void telemetryTask(void *arg) {
     if (xSemaphoreTake(telemetrySemaphore, portMAX_DELAY)) {
       EventLoRaTX txEvent;
       txEvent.type = EVENT_LORA_TX;
-      txEvent.vehicle = vehicleState;
+      txEvent.loraSend.vehicle = vehicleState;
 
       xQueueSend(loraTXQueue, &txEvent, portMAX_DELAY);
       if (DEBUG) {
