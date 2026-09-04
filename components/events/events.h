@@ -52,13 +52,13 @@ struct EventToggle {
 struct EventLoRaTX {
   EventLoRaTXType type;
   bool isVehicle;
-  LoRaSend loraSend;
+  LoRaPacket loraPacket;
 };
 
 struct EventLoRaRX {
   EventLoRaRXType type;
-  LoRaRecv loraRecv;
-  LoRaSend loraSend;
+  LoRaRawPacket loraRawPacket;
+  LoRaPacket loraPacket;
 };
 
 struct EventDisplay {

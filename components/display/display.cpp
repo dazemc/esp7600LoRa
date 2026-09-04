@@ -61,7 +61,7 @@ void displayTask(void *arg) {
         const char *prepend = "Sending:\nVoltage: ";
 
         snprintf(displayData.message, sizeof(displayData.message), "%s%.4f",
-                 prepend, event.loraTX.loraSend.vehicle.voltageData.battery);
+                 prepend, event.loraTX.loraPacket.vehicle.voltageData.battery);
 
         ssd1306_clear(displayHandle);
 
@@ -79,13 +79,13 @@ void displayTask(void *arg) {
         const char *prepend = "Received;\n";
         offset += snprintf(
             message + offset, sizeof(message) - offset, "%s%s%.4f\n", prepend,
-            "VOLTAGE: ", event.loraRX.loraSend.vehicle.voltageData.battery);
+            "VOLTAGE: ", event.loraRX.loraPacket.vehicle.voltageData.battery);
         offset +=
             snprintf(message + offset, sizeof(message) - offset, "%s%.4f\n",
-                     "ADC: ", event.loraRX.loraSend.vehicle.voltageData.adc);
+                     "ADC: ", event.loraRX.loraPacket.vehicle.voltageData.adc);
         offset +=
             snprintf(message + offset, sizeof(message) - offset, "%s%.4f\n",
-                     "RAW: ", event.loraRX.loraSend.vehicle.voltageData.raw);
+                     "RAW: ", event.loraRX.loraPacket.vehicle.voltageData.raw);
         ssd1306_clear(displayHandle);
         ssd1306_draw_text(displayHandle, oledX, oledY, message, true);
         ssd1306_display(displayHandle);

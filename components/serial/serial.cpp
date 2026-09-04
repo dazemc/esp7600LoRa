@@ -34,37 +34,39 @@ void serialTask(void *arg) {
       switch (event.type) {
       case EVENT_SERIAL_LORA_TX: {
         Serial.print("TX sent: ");
-        Serial.printf("PacketId: %d\n", event.loraTX.loraSend.header.packetId);
+        Serial.printf("PacketId: %d\n",
+                      event.loraTX.loraPacket.header.packetId);
         Serial.printf("Voltage: %f\n",
-                      event.loraTX.loraSend.vehicle.voltageData.battery);
-        Serial.printf("ACC: %d\n", event.loraTX.loraSend.vehicle.acc);
+                      event.loraTX.loraPacket.vehicle.voltageData.battery);
+        Serial.printf("ACC: %d\n", event.loraTX.loraPacket.vehicle.acc);
         Serial.print("IGN: ");
-        Serial.println(ignitionToString(event.loraTX.loraSend.vehicle.ign));
+        Serial.println(ignitionToString(event.loraTX.loraPacket.vehicle.ign));
         Serial.printf("HEADLIGHTS: %d\n",
-                      event.loraTX.loraSend.vehicle.headlights);
+                      event.loraTX.loraPacket.vehicle.headlights);
         Serial.printf("RUNNING_LIGHTS: %d\n",
-                      event.loraTX.loraSend.vehicle.runningLights);
+                      event.loraTX.loraPacket.vehicle.runningLights);
         Serial.printf("GLOWPLUGS: %d\n",
-                      event.loraTX.loraSend.vehicle.glowPlugs);
-        Serial.printf("HEATER: %d\n", event.loraTX.loraSend.vehicle.heater);
+                      event.loraTX.loraPacket.vehicle.glowPlugs);
+        Serial.printf("HEATER: %d\n", event.loraTX.loraPacket.vehicle.heater);
         Serial.println();
         break;
       }
       case EVENT_SERIAL_LORA_RX:
         Serial.print("RX recv: ");
-        Serial.printf("PacketId: %d\n", event.loraRX.loraSend.header.packetId);
+        Serial.printf("PacketId: %d\n",
+                      event.loraRX.loraPacket.header.packetId);
         Serial.printf("Voltage: %f\n",
-                      event.loraRX.loraSend.vehicle.voltageData.battery);
-        Serial.printf("ACC: %d\n", event.loraRX.loraSend.vehicle.acc);
+                      event.loraRX.loraPacket.vehicle.voltageData.battery);
+        Serial.printf("ACC: %d\n", event.loraRX.loraPacket.vehicle.acc);
         Serial.print("IGN: ");
-        Serial.println(ignitionToString(event.loraRX.loraSend.vehicle.ign));
+        Serial.println(ignitionToString(event.loraRX.loraPacket.vehicle.ign));
         Serial.printf("HEADLIGHTS: %d\n",
-                      event.loraRX.loraSend.vehicle.headlights);
+                      event.loraRX.loraPacket.vehicle.headlights);
         Serial.printf("RUNNING_LIGHTS: %d\n",
-                      event.loraRX.loraSend.vehicle.runningLights);
+                      event.loraRX.loraPacket.vehicle.runningLights);
         Serial.printf("GLOWPLUGS: %d\n",
-                      event.loraRX.loraSend.vehicle.glowPlugs);
-        Serial.printf("HEATER: %d\n", event.loraRX.loraSend.vehicle.heater);
+                      event.loraRX.loraPacket.vehicle.glowPlugs);
+        Serial.printf("HEATER: %d\n", event.loraRX.loraPacket.vehicle.heater);
         Serial.println();
         break;
       case EVENT_SERIAL_LORA_WIFI:

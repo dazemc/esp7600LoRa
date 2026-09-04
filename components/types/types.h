@@ -33,7 +33,7 @@ struct VoltageData {
   float battery;
 };
 
-struct LoRaRecv {
+struct LoRaRawPacket {
   uint8_t data[256];
   int length;
   int rssi;
@@ -63,7 +63,7 @@ struct Header {
   uint8_t packetId : 3;
 } __attribute__((packed));
 
-struct LoRaSend {
+struct LoRaPacket {
   Header header;
   VehicleState vehicle;
   bool isWifi;
@@ -72,8 +72,8 @@ struct LoRaSend {
 
 struct Telemetry {
   union {
-    LoRaRecv loraRecv;
+    LoRaRawPacket loraRawPacket;
     VehicleState vehicle;
-    LoRaSend loraSend;
+    LoRaPacket loraPacket;
   };
 };
