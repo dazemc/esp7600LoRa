@@ -40,7 +40,7 @@ void serialLoRa(LoRaPacket packet) {
   xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
 }
 
-void sendPacket(LoRaPacket packet) {
+void sendPacketDuplex(LoRaPacket packet) {
   LoRa.beginPacket();
   LoRa.write((uint8_t *)&packet, sizeof(packet));
   LoRa.endPacket();
@@ -60,7 +60,7 @@ void buildPacket(EventLoRaTX event) {
   packet.vehicle = event.loraPacket.vehicle;
   packet.isWifi = false;
   packet.isVehicle = isVehicle;
-  sendPacket(packet);
+  sendPacketDuplex(packet);
 }
 
 void sendLoRaTask(void *arg) {
@@ -89,7 +89,7 @@ void sendLoRaTask(void *arg) {
           };
           event.loraPacket = packet;
           // buildPacket(event);
-          sendPacket(packet);
+          sendPacketDuplex(packet);
           break;
         }
       }
