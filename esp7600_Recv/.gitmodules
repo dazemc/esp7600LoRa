@@ -1,3 +1,0 @@
-[submodule "components/LoRa"]
-	path = components/LoRa
-	url = https://github.com/sandeepmistry/arduino-LoRa.git
