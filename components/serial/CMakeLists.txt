@@ -7,5 +7,4 @@ idf_component_register(
   events
   PRIV_REQUIRES
   utils
-  arduino-esp32
   event_bus)

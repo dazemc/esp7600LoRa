@@ -1,7 +1,6 @@
 #pragma once
 
 #include "driver/i2c_master.h"
-#include <Arduino.h>
 #include <ssd1306.h>
 
 #define OLED_SDA GPIO_NUM_4

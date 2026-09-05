@@ -4,7 +4,6 @@ idf_component_register(
   INCLUDE_DIRS
   "."
   PRIV_REQUIRES
-  arduino-esp32
   events
   event_bus
   telemetry)

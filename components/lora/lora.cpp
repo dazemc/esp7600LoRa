@@ -1,6 +1,8 @@
-#include <Arduino.h>
+#undef ARDUINO
+#include <RadioLib.h>
+#include <hal/ESP-IDF/EspHal.h>
 #include "freertos/FreeRTOS.h"
-#include "LoRa.h"
+#include "esp_log.h"
 #include "lora.h"
 #include "events.h"
 #include "event_bus.h"
@@ -11,52 +13,83 @@
 QueueHandle_t loraTXQueue = nullptr;
 QueueHandle_t loraRXQueue = nullptr;
 bool isVehicle{};
-static uint8_t packetId = 0;
-static uint8_t lastPacketId;
-static bool havePacket = false;
+
+static SemaphoreHandle_t radioMutex;
+
+static EspHal *hal = new EspHal(LORA_SCK, LORA_MISO, LORA_MOSI);
+static SX1276 radio = new Module(hal, LORA_CS, LORA_DIO0, LORA_RST, LORA_DIO1);
+
+static uint8_t packetIdTX = 0;
+static uint8_t lastPacketIdRX;
+static bool havePacketRX = false;
+
+static const char *TAG = "lora";
+
+volatile bool receivedFlag = false;
+
+void setFlag(void) { receivedFlag = true; }
 
 void initLoRa() {
-  SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
-  LoRa.setPins(LORA_CS, LORA_RST, LORA_DIO0);
+  ESP_LOGI(TAG, "[SX1276] Initializing ...");
+  radioMutex = xSemaphoreCreateMutex();
 
-  if (!LoRa.begin(LORA_FREQ)) {
-    Serial.println("LoRa failed");
-    return;
+  int state = radio.begin(915.0);
+
+  if (state != RADIOLIB_ERR_NONE) {
+    ESP_LOGE(TAG, "failed, code %d", state);
+    while (true) {
+      hal->delay(1000);
+    }
   }
-  Serial.println("LoRa started");
+
+  radio.setSyncWord(0x14);
+  radio.setDio0Action(setFlag, hal->GpioInterruptRising);
+  radio.startReceive();
+
+  ESP_LOGI(TAG, "success!");
 }
 
-void displayLoRa(LoRaPacket packet) {
+void displayLoRa(const LoRaPacket &packet) {
   EventDisplay displayEvent = {};
   displayEvent.type = EVENT_DISPLAY_LORA_TX;
   displayEvent.loraTX.loraPacket = packet;
   xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
 }
 
-void serialLoRa(LoRaPacket packet) {
+void serialLoRa(const LoRaPacket &packet) {
   EventSerial serialEvent = {};
   serialEvent.type = EVENT_SERIAL_LORA_TX;
   serialEvent.loraTX.loraPacket = packet;
   xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
 }
 
-void sendPacketDuplex(LoRaPacket packet) {
-  LoRa.beginPacket();
-  LoRa.write((uint8_t *)&packet, sizeof(packet));
-  LoRa.endPacket();
-  LoRa.receive();
+void sendPacketDuplex(const LoRaPacket &packet) {
+  xSemaphoreTake(radioMutex, portMAX_DELAY);
+  receivedFlag = false;
+  radio.clearDio0Action();
+
+  int state = radio.transmit((uint8_t *)&packet, sizeof(packet));
+  if (state != RADIOLIB_ERR_NONE) {
+    ESP_LOGE(TAG, "transmit failed, code %d", state);
+  }
+
+  radio.setDio0Action(setFlag, hal->GpioInterruptRising);
+  radio.startReceive();
+
+  xSemaphoreGive(radioMutex);
+
   displayLoRa(packet);
   serialLoRa(packet);
 }
 
-uint8_t incrementPacketId() {
+uint8_t incrementPacketId(uint8_t &packetId) {
   packetId = (packetId + 1) & 0x07;
   return packetId;
 }
 
 void buildPacket(EventLoRaTX event) {
   LoRaPacket packet{};
-  packet.header.packetId = incrementPacketId();
+  packet.header.packetId = incrementPacketId(packetIdTX);
   packet.vehicle = event.loraPacket.vehicle;
   packet.isWifi = false;
   packet.isVehicle = isVehicle;
@@ -65,19 +98,20 @@ void buildPacket(EventLoRaTX event) {
 
 void sendLoRaTask(void *arg) {
   EventLoRaTX event = {};
+
   while (true) {
     if (xQueueReceive(loraTXQueue, &event, portMAX_DELAY)) {
       switch (event.type) {
       case EVENT_LORA_SEND:
         break;
+
       case EVENT_LORA_TX: {
         if (isVehicle) {
           buildPacket(event);
-          break;
         } else {
-          // test
+          // test packet
           LoRaPacket packet{};
-          packet.header.packetId = incrementPacketId();
+          packet.header.packetId = incrementPacketId(packetIdTX);
           packet.vehicle = {
               .voltageData = {},
               .ign = OFF,
@@ -87,100 +121,81 @@ void sendLoRaTask(void *arg) {
               .heater = false,
               .glowPlugs = false,
           };
-          event.loraPacket = packet;
-          // buildPacket(event);
           sendPacketDuplex(packet);
-          break;
         }
+        break;
       }
       }
+
       if (DEBUG) {
-        EventSerial event{};
-        event.type = EVENT_SERIAL_DEBUG;
+        EventSerial dbg{};
+        dbg.type = EVENT_SERIAL_DEBUG;
         UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
-        debugRemainingStackSize("LoRaTX", event.debug.remainingStackMsg,
+        debugRemainingStackSize("LoRaTX", dbg.debug.remainingStackMsg,
                                 remaining);
-        debugRemainingQueue("LoRaTX", event.debug.remainingQueueMsg,
+        debugRemainingQueue("LoRaTX", dbg.debug.remainingQueueMsg,
                             uxQueueMessagesWaiting(loraTXQueue));
-        xQueueSend(serialQueue, &event, portMAX_DELAY);
+        xQueueSend(serialQueue, &dbg, portMAX_DELAY);
       }
     }
   }
 }
 
 void checkPacketId(uint8_t packetId) {
-  if (havePacket) {
-    uint8_t expected = (lastPacketId + 1) & 0x07;
+  if (havePacketRX) {
+    uint8_t expected = (lastPacketIdRX + 1) & 0x07;
     if (packetId != expected) {
-      Serial.printf("\033[1;33mWARNING: dropped packet(s) expected %d but got "
-                    "%d\033[0m\n",
-                    expected, packetId);
+      printf("\033[1;33mWARNING: dropped packet(s) expected %d but got "
+             "%d\033[0m\n",
+             expected, packetId);
     }
-    lastPacketId = packetId;
+    lastPacketIdRX = packetId;
   } else {
-    // so I don't continously set the bool
-    havePacket = true;
-    lastPacketId = packetId;
+    havePacketRX = true;
+    lastPacketIdRX = packetId;
   }
 }
 
 void recvLoRaTask(void *arg) {
-  EventLoRaRX event{};
   EventDisplay displayEvent{};
   EventSerial serialEvent{};
-  LoRa.onReceive(onReceive);
-  LoRa.receive();
+
   while (true) {
-    if (xQueueReceive(loraRXQueue, &event, portMAX_DELAY)) {
-      switch (event.type) {
-      case EVENT_LORA_RECV:
-        break;
-      case EVENT_LORA_RX: {
-        if (event.loraRawPacket.length != sizeof(LoRaPacket)) {
-          Serial.printf("Invalid packet size: %d\n",
-                        event.loraRawPacket.length);
-          continue;
+    if (receivedFlag) {
+      receivedFlag = false;
+      xSemaphoreTake(radioMutex, portMAX_DELAY);
+
+      uint8_t buffer[sizeof(LoRaPacket)];
+      int state = radio.readData(buffer, sizeof(buffer));
+
+      if (state == RADIOLIB_ERR_NONE) {
+        size_t len = radio.getPacketLength();
+
+        if (len != sizeof(LoRaPacket)) {
+          printf("Invalid packet size: %zu\n", len);
+        } else {
+          LoRaPacket packet{};
+          memcpy(&packet, buffer, sizeof(packet));
+
+          checkPacketId(packet.header.packetId);
+
+          displayEvent.type = EVENT_DISPLAY_LORA_RX;
+          displayEvent.loraRX.loraPacket = packet;
+
+          serialEvent.type = EVENT_SERIAL_LORA_RX;
+          serialEvent.loraRX.loraPacket = packet;
+
+          xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
+          xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
         }
+      } else {
+        ESP_LOGE(TAG, "readData failed, code %d", state);
+      }
 
-        LoRaPacket packet{};
-
-        memcpy(&packet, event.loraRawPacket.data, sizeof(packet));
-        checkPacketId(packet.header.packetId);
-        displayEvent.type = EVENT_DISPLAY_LORA_RX;
-        displayEvent.loraRX.loraPacket = packet;
-        serialEvent.type = EVENT_SERIAL_LORA_RX;
-        serialEvent.loraRX.loraPacket = packet;
-        xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
-        xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
-        break;
-      }
-      }
-      if (DEBUG) {
-        EventSerial event{};
-        event.type = EVENT_SERIAL_DEBUG;
-        UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
-        debugRemainingStackSize("LoRaRX", event.debug.remainingStackMsg,
-                                remaining);
-        debugRemainingQueue("LoRaRX", event.debug.remainingQueueMsg,
-                            uxQueueMessagesWaiting(loraRXQueue));
-        xQueueSend(serialQueue, &event, portMAX_DELAY);
-      }
+      radio.startReceive();
+      xSemaphoreGive(radioMutex);
     }
-  }
-}
 
-void onReceive(int packetSize) {
-  if (packetSize) {
-    EventLoRaRX event{};
-    event.type = EVENT_LORA_RX;
-    event.loraRawPacket.length = 0;
-    event.loraRawPacket.rssi = LoRa.packetRssi();
-    event.loraRawPacket.snr = LoRa.packetSnr();
-
-    while (LoRa.available() &&
-           event.loraRawPacket.length < sizeof(event.loraRawPacket.data)) {
-      event.loraRawPacket.data[event.loraRawPacket.length++] = LoRa.read();
-    }
-    xQueueSend(loraRXQueue, &event, 0);
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }

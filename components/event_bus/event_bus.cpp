@@ -1,6 +1,5 @@
 #include "event_bus.h"
 #include "events.h"
-#include "Arduino.h"
 
 VehicleState vehicleState{};
 
@@ -13,8 +12,7 @@ void initEventBus(const EventConfig *events, size_t count) {
       *queueConfig->handle =
           xQueueCreate(queueConfig->length, queueConfig->itemSize);
       if (*queueConfig->handle == nullptr) {
-        Serial.println(
-            "\033[1;31mERROR: Failed to create event queue\033[0m\n");
+        printf("\033[1;31mERROR: Failed to create event queue\033[0m\n\n");
         abort();
       }
     }

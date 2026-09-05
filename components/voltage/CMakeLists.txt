@@ -3,10 +3,11 @@ idf_component_register(
   "voltage.cpp"
   INCLUDE_DIRS
   "."
+  REQUIRES
+  esp_adc
   PRIV_REQUIRES
   serial
   utils
-  esp_adc
   freertos
   log
   events

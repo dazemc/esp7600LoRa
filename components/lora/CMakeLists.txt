@@ -4,10 +4,9 @@ idf_component_register(
   INCLUDE_DIRS
   "."
   REQUIRES
-  LoRa
+  radiolib
   PRIV_REQUIRES
   utils
-  arduino-esp32
   events
   event_bus
   serial

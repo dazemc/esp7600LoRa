@@ -1,16 +1,17 @@
 #pragma once
 
-#include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include "driver/gpio.h"
 
 // 13, 17, 22, 23, 25, 33
-#define IGN 25
-#define ACC 22
-#define HEADLIGHTS 17
-#define RUNNING_LIGHTS 23
-#define GLOW_PLUGS 33
-#define HEATER 13
+#define IGN GPIO_NUM_25
+#define ACC GPIO_NUM_22
+#define HEADLIGHTS GPIO_NUM_17
+#define RUNNING_LIGHTS GPIO_NUM_23
+#define GLOW_PLUGS GPIO_NUM_33
+#define HEATER GPIO_NUM_13
 
-inline constexpr int relayPins[] = {
+inline constexpr gpio_num_t relayPins[] = {
     IGN, ACC, HEADLIGHTS, RUNNING_LIGHTS, GLOW_PLUGS, HEATER,
 };
 

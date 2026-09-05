@@ -9,6 +9,7 @@ inline constexpr int LORA_MOSI = 27;
 inline constexpr int LORA_MISO = 19;
 inline constexpr int LORA_RST = 14;
 inline constexpr int LORA_DIO0 = 26;
+inline constexpr int LORA_DIO1 = 35;
 
 void initLoRa();
 void sendLoRaTask(void *arg);

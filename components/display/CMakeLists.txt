@@ -6,7 +6,6 @@ idf_component_register(
   REQUIRES
   ssd1306
   esp_driver_i2c
-  arduino-esp32
   types
   events
   event_bus

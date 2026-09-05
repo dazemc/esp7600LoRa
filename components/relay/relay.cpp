@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include "relay.h"
+#include "driver/gpio.h"
 #include "events.h"
 #include "event_bus.h"
 #include "types.h"
@@ -8,9 +8,11 @@
 QueueHandle_t relayQueue = nullptr;
 
 void initRelay() {
-  for (int pin : relayPins) {
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, HIGH);
+  for (gpio_num_t pin : relayPins) {
+    // pinMode(pin, OUTPUT);
+    gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+    // digitalWrite(pin, HIGH);
+    gpio_set_level(pin, 1);
   }
   // TODO get a gpio expander (MCP23017) as I will need to sense relay state
   // when vehicle is operated. This will do for remote start and monitoring.
@@ -26,27 +28,27 @@ void initRelay() {
 }
 
 void relayCycleTest() {
-  for (int pin : relayPins) {
-    digitalWrite(pin, LOW);
-    Serial.println("setting pins low");
+  for (gpio_num_t pin : relayPins) {
+    gpio_set_level(pin, 0);
+    printf("setting pins low\n");
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
   vTaskDelay(pdMS_TO_TICKS(1000));
-  for (int pin : relayPins) {
-    digitalWrite(pin, HIGH);
-    Serial.println("setting pins high");
+  for (gpio_num_t pin : relayPins) {
+    gpio_set_level(pin, 1);
+    printf("setting pins high\n");
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
-bool togglePinState(uint8_t pin) {
-  bool pinState = digitalRead(pin) == LOW;
+bool togglePinState(gpio_num_t pin) {
+  bool pinState = gpio_get_level(pin);
   pinState = !pinState;
-  digitalWrite(pin, pinState ? LOW : HIGH);
+  gpio_set_level(pin, pinState ? 0 : 1);
   return pinState;
 }
 
-bool relayState(uint8_t pin) { return digitalRead(pin) == LOW; }
+bool relayState(gpio_num_t pin) { return gpio_get_level(pin) == 0; }
 
 void relayTask(void *arg) {
   // This will recieve state from LoRa or Serial via Raspberry Pi 4g modem, then
