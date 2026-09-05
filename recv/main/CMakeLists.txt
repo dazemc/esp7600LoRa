@@ -1,0 +1,13 @@
+idf_component_register(
+  SRCS
+  "main.cpp"
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  display
+  serial
+  lora
+  voltage
+  relay
+  events
+  event_bus)
