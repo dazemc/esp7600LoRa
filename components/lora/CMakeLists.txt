@@ -10,4 +10,5 @@ idf_component_register(
   events
   event_bus
   serial
-  display)
+  display
+  voltage)

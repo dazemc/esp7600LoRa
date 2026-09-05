@@ -31,6 +31,7 @@ struct VoltageData {
   float raw;
   float adc;
   float battery;
+  uint8_t encodedVoltage;
 };
 
 struct LoRaRawPacket {
@@ -68,6 +69,23 @@ struct LoRaPacket {
   VehicleState vehicle;
   bool isWifi;
   bool isVehicle;
+} __attribute__((packed));
+
+struct LoRaCompactPacket {
+  // 3 bytes with 4 bits reserved
+  uint8_t packetId : 3;
+  uint8_t isVehicle : 1;
+  uint8_t _reserved : 4;
+
+  uint8_t ign : 2;
+  uint8_t headlights : 1;
+  uint8_t acc : 1;
+  uint8_t runningLights : 1;
+  uint8_t heater : 1;
+  uint8_t glowPlugs : 1;
+  uint8_t isWifiEnabled : 1;
+
+  uint8_t encodedVoltage;
 } __attribute__((packed));
 
 struct Telemetry {

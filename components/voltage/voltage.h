@@ -17,3 +17,5 @@
 #define ADC_ATTEN ADC_ATTEN_DB_12
 
 void voltageMonitorTask(void *arg);
+uint8_t voltageToU8(float voltage);
+float u8ToVoltage(uint8_t u8ToVoltage);

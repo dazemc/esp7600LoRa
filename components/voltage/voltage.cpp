@@ -9,9 +9,30 @@
 #include "utils.h"
 #include "serial.h"
 
+#define V_MIN 11.0f
+#define V_MAX 16.0f
+
 static adc_oneshot_unit_handle_t adc_handle;
 static adc_oneshot_unit_init_cfg_t init_config{};
 static adc_cali_handle_t cali_handle;
+
+static const char *TAG = "voltage";
+
+uint8_t voltageToU8(float voltage) {
+  if (voltage < V_MIN) {
+    ESP_LOGE(TAG, "Battery far below safe threshold %f\n", voltage);
+    voltage = V_MIN;
+  }
+  if (voltage > V_MAX) {
+    ESP_LOGE(TAG, "Battery far above safe threshold %f\n", voltage);
+    voltage = V_MAX;
+  }
+  return (uint8_t)((voltage - V_MIN) * 255.0f / (V_MAX - V_MIN));
+}
+
+float u8ToVoltage(uint8_t u8Voltage) {
+  return V_MIN + (u8Voltage * (V_MAX - V_MIN) / 255.0f);
+}
 
 static void initVoltageMonitor() {
   init_config.unit_id = ADC_UNIT;
@@ -50,6 +71,7 @@ void voltageMonitorTask(void *arg) {
     vehicleState.voltageData.raw = raw;
     vehicleState.voltageData.adc = adc_voltage;
     vehicleState.voltageData.battery = battery_voltage;
+    vehicleState.voltageData.encodedVoltage = voltageToU8(battery_voltage);
     xSemaphoreGive(telemetrySemaphore);
 
     // printf("Raw: %d\nADC: %.3f V\nBattery: %.2f V\n", raw, adc_voltage,

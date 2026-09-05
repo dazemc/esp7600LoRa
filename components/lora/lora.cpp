@@ -9,6 +9,7 @@
 #include "display.h"
 #include "serial.h"
 #include "utils.h"
+#include "voltage.h"
 
 QueueHandle_t loraTXQueue = nullptr;
 QueueHandle_t loraRXQueue = nullptr;
@@ -68,7 +69,8 @@ void sendPacketDuplex(const LoRaPacket &packet) {
   receivedFlag = false;
   radio.clearDio0Action();
 
-  int state = radio.transmit((uint8_t *)&packet, sizeof(packet));
+  LoRaCompactPacket compactPacket = packetToCompactPacket(packet, packetIdTX);
+  int state = radio.transmit((uint8_t *)&compactPacket, sizeof(compactPacket));
   if (state != RADIOLIB_ERR_NONE) {
     ESP_LOGE(TAG, "transmit failed, code %d", state);
   }
@@ -80,11 +82,6 @@ void sendPacketDuplex(const LoRaPacket &packet) {
 
   displayLoRa(packet);
   serialLoRa(packet);
-}
-
-uint8_t incrementPacketId(uint8_t &packetId) {
-  packetId = (packetId + 1) & 0x07;
-  return packetId;
 }
 
 void buildPacket(EventLoRaTX event) {
@@ -165,25 +162,28 @@ void recvLoRaTask(void *arg) {
       receivedFlag = false;
       xSemaphoreTake(radioMutex, portMAX_DELAY);
 
-      uint8_t buffer[sizeof(LoRaPacket)];
+      uint8_t buffer[sizeof(LoRaCompactPacket)];
       int state = radio.readData(buffer, sizeof(buffer));
 
       if (state == RADIOLIB_ERR_NONE) {
         size_t len = radio.getPacketLength();
 
-        if (len != sizeof(LoRaPacket)) {
+        if (len != sizeof(LoRaCompactPacket)) {
           printf("Invalid packet size: %zu\n", len);
         } else {
-          LoRaPacket packet{};
+          LoRaCompactPacket packet{};
           memcpy(&packet, buffer, sizeof(packet));
 
-          checkPacketId(packet.header.packetId);
+          checkPacketId(packet.packetId);
 
           displayEvent.type = EVENT_DISPLAY_LORA_RX;
-          displayEvent.loraRX.loraPacket = packet;
+          LoRaPacket unpackedPacket = unpackPacket(packet);
+          unpackedPacket.vehicle.voltageData.battery =
+              u8ToVoltage(unpackedPacket.vehicle.voltageData.encodedVoltage);
+          displayEvent.loraRX.loraPacket = unpackedPacket;
 
           serialEvent.type = EVENT_SERIAL_LORA_RX;
-          serialEvent.loraRX.loraPacket = packet;
+          serialEvent.loraRX.loraPacket = unpackedPacket;
 
           xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
           xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);

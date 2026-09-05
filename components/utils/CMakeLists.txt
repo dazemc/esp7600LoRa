@@ -1,1 +1,1 @@
-idf_component_register(SRCS "utils.cpp" INCLUDE_DIRS ".")
+idf_component_register(SRCS "utils.cpp" INCLUDE_DIRS "." PRIV_REQUIRES types)
