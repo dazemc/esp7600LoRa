@@ -10,4 +10,5 @@ idf_component_register(
   voltage
   relay
   events
-  event_bus)
+  event_bus
+  wifi_sta)

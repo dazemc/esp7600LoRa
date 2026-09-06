@@ -6,11 +6,12 @@
 #include "display.h"
 #include "freertos/FreeRTOS.h"
 #include "utils.h"
+#include "wifi_sta.h"
 
 // static const char AP_SSID[5] = "sage";
 // static const char AP_PSK[9] = "minotaur";
-static char SSID[14] = "Aetheryte_2.4";
-static char PSK[13] = "blackchocobo";
+// static char SSID[14] = "Aetheryte_2.4";
+// static char PSK[13] = "blackchocobo";
 
 static const QueueConfig recvLoRaQueueConf{
     .handle = &loraRXQueue, .length = 10, .itemSize = sizeof(EventLoRaRX)};
@@ -44,7 +45,7 @@ extern "C" void app_main() {
   initLoRa();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));
-  // initWiFi(SSID, PSK);
+  initWiFi();
   // initWiFiAP(AP_SSID, AP_PSK);
   // while (true) {
   //   EventLoRaTX event{};
