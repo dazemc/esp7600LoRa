@@ -24,3 +24,7 @@ decision + reason). The user escalates entries to `.llm/todo.md`.
 9. **Upstream chill-sam/ssd1306 1.1.2 keeps esp_driver_gpio in PRIV_REQUIRES,
    breaking IDF 6 builds; we carry a one-line workaround (gpio in display's
    REQUIRES).** Drop the workaround when upstream fixes it.
+10. **Lesson 2026-09-14: flashing preserves NVS, so the Wi-Fi driver can
+    rejoin a stale network even with no creds in firmware.** Any credential
+    rotation must wipe or overwrite board NVS (we purge once via marker);
+    never assume a reflash alone clears stored secrets.
