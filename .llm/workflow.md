@@ -64,7 +64,7 @@ board or `recv/` onto the vehicle board. Release the serial port when done.
 
 ## opencode
 
-Headless opencode runs drive implementation through this agent (the AFK
+Implementation runs go through headless opencode by default (the AFK
 workflow): `opencode serve` on localhost, then `opencode run --attach`
 with `--auto`, a scoped task file, and hard constraints (do not flash
 hardware, do not commit unless told which slice). A run is done when it
