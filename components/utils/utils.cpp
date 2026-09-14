@@ -43,10 +43,12 @@ Ignition unpackIgnition(uint8_t ign) {
 }
 
 LoRaCompactPacket packetToCompactPacket(LoRaPacket loraPacket,
-                                        uint8_t packetIdTX) {
+                                        uint8_t packetId) {
 
   LoRaCompactPacket packet{};
-  packet.packetId = incrementPacketId(packetIdTX);
+  // Caller owns the increment (buildPacket / test branch set header + global
+  // once); the air ID must equal the logged header ID.
+  packet.packetId = packetId;
   packet.isVehicle = isVehicle;
   packet.ign = loraPacket.vehicle.ign;
   packet.headlights = loraPacket.vehicle.headlights;
