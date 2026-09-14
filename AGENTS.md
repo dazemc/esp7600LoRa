@@ -149,7 +149,10 @@ a live credential.
 
 Never flash a board without the user's explicit confirmation of which port
 and which app (`send` vs `recv`) — flashing the wrong image onto a deployed
-node is the live-system break here. Never leave a monitor session holding
+node is the live-system break here. Exception: while both nodes are on the
+test bench, standing authorization covers flashing (sender /dev/ttyUSB0,
+base /dev/ttyUSB1); revert to per-flash confirmation once hardware deploys.
+Never leave a monitor session holding
 the serial port when done. Keep `sdkconfig` changes deliberate: a radio-pin
 or partition-table edit bricks the link until both sides agree, so matching
 `send`/`recv` changes land as one step with both builds proven.
