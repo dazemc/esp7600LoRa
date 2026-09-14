@@ -5,9 +5,12 @@ Remove steps as they land — never check them off.
 
 ## Phase 1: review hardening (escalated 2026-09-14)
 
-1. **Rotate Wi-Fi PSK and move creds out of the tree.** Done when the live
-   PSK is rotated on the AP, no credential string remains in any tracked
-   file, and creds arrive via Kconfig.projbuild or an untracked header.
+1. **Provision Wi-Fi via AP-mode REST API, purge hardcoded creds.** Done when
+   no credential string remains in any tracked file, the base boots a config
+   AP when no STA creds are stored, STA creds are set over a JSON REST API
+   (no HTML — a Flutter app is the future client) and persisted in NVS, and
+   the base connects as STA from NVS. (User rotates the real-world AP
+   password out of band — the old one sat in a public repo.)
 2. **Wire up or drop the relay component.** Done when relay GPIOs are driven
    outputs with `initRelay()` called and `relayTask` registered, or the
    component is removed — no floating relay inputs on the vehicle node.
