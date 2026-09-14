@@ -14,6 +14,7 @@
 static const char *TAG = "wifi_sta";
 static int s_retry_num = 0;
 static bool s_sta_connected = false;
+static bool s_provisioned = false;
 static esp_netif_ip_info_t s_sta_ip = {};
 static httpd_handle_t s_server = nullptr;
 
@@ -152,8 +153,12 @@ static void wifiEventHandler(void *arg, esp_event_base_t event_base,
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
     case WIFI_EVENT_STA_START:
-      ESP_LOGI(TAG, "WiFi started, connecting...");
-      ESP_ERROR_CHECK(esp_wifi_connect());
+      if (s_provisioned) {
+        ESP_LOGI(TAG, "WiFi started, connecting...");
+        ESP_ERROR_CHECK(esp_wifi_connect());
+      } else {
+        ESP_LOGI(TAG, "WiFi started, STA idle until provisioned");
+      }
       break;
 
     case WIFI_EVENT_STA_CONNECTED:
@@ -200,6 +205,25 @@ void initWiFi(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
   }
 
+  // One-time purge: firmware predating provisioning may have left STA creds
+  // in the driver's NVS namespace. Wipe once, then leave NVS alone.
+  nvs_handle_t mh;
+  uint8_t purged = 0;
+  if (nvs_open("esp7600", NVS_READWRITE, &mh) == ESP_OK) {
+    nvs_get_u8(mh, "nvs_purged", &purged);
+    nvs_close(mh);
+  }
+  if (!purged) {
+    ESP_LOGW(TAG, "purging NVS of pre-provisioning credentials");
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ESP_ERROR_CHECK(nvs_flash_init());
+    if (nvs_open("esp7600", NVS_READWRITE, &mh) == ESP_OK) {
+      nvs_set_u8(mh, "nvs_purged", 1);
+      nvs_commit(mh);
+      nvs_close(mh);
+    }
+  }
+
   // Netif + event loop
   ESP_ERROR_CHECK(esp_netif_init());
   ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -224,6 +248,7 @@ void initWiFi(void) {
   char ssid[33] = "";
   char pass[65] = "";
   if (loadCreds(ssid, sizeof(ssid), pass, sizeof(pass))) {
+    s_provisioned = true;
     wifi_config_t sta_config = {};
     strncpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid) - 1);
     strncpy((char *)sta_config.sta.password, pass,
