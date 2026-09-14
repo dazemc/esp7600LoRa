@@ -11,9 +11,8 @@ decision + reason). The user escalates entries to `.llm/todo.md`.
 2. **Escalated to todo phase 1.**
 3. **Escalated to todo phase 1.**
 4. **Escalated to todo phase 1.**
-5. **Wi-Fi gives up forever after 10 retries.** `wifi_sta.cpp` logs "giving up"
-   and never retries — an unattended base stays offline until a manual reboot.
-   Add a periodic reconnect (timer with backoff) instead of a dead end.
+5. **Covered by phase-1 wifi rework (STA retry still caps at 10, but the setup
+   AP stays up so the node is never stranded — re-POST /api/wifi).**
 6. **Radio init failure spins forever.** `initLoRa()` loops `delay(1000)` on
    `radio.begin()` failure; under the task watchdog this becomes a silent
    reset loop. Restart with backoff or fail distinctly instead.
@@ -22,3 +21,6 @@ decision + reason). The user escalates entries to `.llm/todo.md`.
    any future `EVENT_LORA_TX` on the base puts junk on air. Gate behind
    `DEBUG` or delete it.
 8. **Escalated to todo phase 1.**
+9. **Upstream chill-sam/ssd1306 1.1.2 keeps esp_driver_gpio in PRIV_REQUIRES,
+   breaking IDF 6 builds; we carry a one-line workaround (gpio in display's
+   REQUIRES).** Drop the workaround when upstream fixes it.
