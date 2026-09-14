@@ -13,10 +13,9 @@ Remove steps as they land — never check them off.
    Found + fixed en route: relayState signature mismatch (latent link
    failure), missing gpio requirement, and a display-abort reboot loop
    (OLED probe now degrades gracefully — telemetry never dies for a screen).
-3. **Fix packet ID off-by-one.** Done when the transmitted ID equals the
-   logged/displayed ID (single increment path), proven by matching sender
-   and receiver logs over several packets.
-4. **Raise telemetry task stack to 2048.** Done when `send/` builds clean
-   and live logs show comfortable high-water margin.
-5. **Raise LoRaTX task stack to 4096.** Done when `send/` builds clean and
-   live logs show comfortable high-water margin through transmit bursts.
+3. **DONE (2026-09-14, flashed + proven).** Single increment path;
+   sender and receiver logs agree packet-for-packet over the air.
+4. **DONE (2026-09-14, flashed + proven).** Telemetry at 2048, 1184 bytes
+   high-water margin observed live (was 164).
+5. **DONE (2026-09-14, flashed + proven).** LoRaTX at 4096, 2476 bytes
+   high-water margin through transmit bursts (was 372).
