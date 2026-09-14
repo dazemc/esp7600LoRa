@@ -5,7 +5,8 @@ be absolutely needed (prevent a future mistake, unblock work, or record a
 decision + reason). The user escalates entries to `.llm/todo.md`.
 
 ## 2026-09-14 code review (live-link verified, both boards up)
-(escalated to `.llm/todo.md` phase 1: items 1, 8, 2, 3, 4 — remaining open below)
+(phase 1 landed 2026-09-14 as PR #1: wifi provisioning, relay, packet ID,
+stacks — remaining open below)
 
 1. **Escalated to todo phase 1.**
 2. **Escalated to todo phase 1.**
