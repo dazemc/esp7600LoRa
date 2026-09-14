@@ -140,10 +140,10 @@ reuse the cache. Both apps must build after any shared-component change.
 ## Privacy
 
 Secrets stay out of the tree by name only: Wi-Fi SSID/PSK, SIM PIN/APN
-credentials, server URLs with tokens. `recv/main/main.cpp` already carries
-commented-out SSID/PSK placeholders — they stay commented, and live values
-are passed at flash/monitor time or via untracked local config, never
-committed. Never read, print, summarize, or commit a live credential.
+credentials, server URLs with tokens. STA credentials live in NVS,
+provisioned over the AP-mode REST API (see `.llm/hardware.md`) — they are
+passed at runtime, never committed. Never read, print, summarize, or commit
+a live credential.
 
 ## Safety
 
