@@ -27,7 +27,7 @@ static const QueueConfig relayQueueConf{
 static const EventConfig events[]{
     {.taskConfig = {recvLoRaTask, "LoRa RX", 2048, NULL, 3, NULL},
      .queueConfig = &recvLoRaRXQueueConf},
-    {.taskConfig = {sendLoRaTask, "LoRa TX", 2048, NULL, 3, NULL},
+    {.taskConfig = {sendLoRaTask, "LoRa TX", 4096, NULL, 3, NULL},
      .queueConfig = &sendLoRaTXQueueConf},
     {.taskConfig = {displayTask, "Display", 3096, NULL, 2, NULL},
      .queueConfig = &displayQueueConf},
@@ -37,7 +37,7 @@ static const EventConfig events[]{
      .queueConfig = &relayQueueConf},
     {.taskConfig = {voltageMonitorTask, "Voltage", 2048, NULL, 2, NULL},
      .queueConfig = nullptr},
-    {.taskConfig = {telemetryTask, "Telemetry", 1024, NULL, 2, NULL},
+    {.taskConfig = {telemetryTask, "Telemetry", 2048, NULL, 2, NULL},
      .queueConfig = nullptr},
 };
 
