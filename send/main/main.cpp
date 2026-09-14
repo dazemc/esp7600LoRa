@@ -6,6 +6,7 @@
 #include "serial.h"
 #include "telemetry.h"
 #include "voltage.h"
+#include "relay.h"
 #include "utils.h"
 
 static const QueueConfig recvLoRaRXQueueConf{
@@ -20,6 +21,9 @@ static const QueueConfig displayQueueConf{
 static const QueueConfig serialQueueConf{
     .handle = &serialQueue, .length = 10, .itemSize = sizeof(EventSerial)};
 
+static const QueueConfig relayQueueConf{
+    .handle = &relayQueue, .length = 10, .itemSize = sizeof(EventToggle)};
+
 static const EventConfig events[]{
     {.taskConfig = {recvLoRaTask, "LoRa RX", 2048, NULL, 3, NULL},
      .queueConfig = &recvLoRaRXQueueConf},
@@ -29,6 +33,8 @@ static const EventConfig events[]{
      .queueConfig = &displayQueueConf},
     {.taskConfig = {serialTask, "Serial", 2048, NULL, 2, NULL},
      .queueConfig = &serialQueueConf},
+    {.taskConfig = {relayTask, "Relay", 2048, NULL, 2, NULL},
+     .queueConfig = &relayQueueConf},
     {.taskConfig = {voltageMonitorTask, "Voltage", 2048, NULL, 2, NULL},
      .queueConfig = nullptr},
     {.taskConfig = {telemetryTask, "Telemetry", 1024, NULL, 2, NULL},
@@ -40,6 +46,7 @@ static const SemaphoreConfig semaphores[]{{&telemetrySemaphore}};
 extern "C" void app_main() {
   isVehicle = true;
   initLoRa();
+  initRelay();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));
 }

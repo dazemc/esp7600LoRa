@@ -18,6 +18,6 @@ inline constexpr gpio_num_t relayPins[] = {
 void relayTask(void *arg);
 void initRelay();
 void relayCycleTest();
-bool relayState(uint8_t pin);
+bool relayState(gpio_num_t pin);
 
 extern QueueHandle_t relayQueue;
