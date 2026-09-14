@@ -5,14 +5,9 @@ Remove steps as they land — never check them off.
 
 ## Phase 1: review hardening (escalated 2026-09-14)
 
-1. **Provision Wi-Fi via AP-mode REST API, purge hardcoded creds.** Done when
-   no credential string remains in any tracked file, the base boots a config
-   AP when no STA creds are stored, STA creds are set over a JSON REST API
-   (no HTML — a Flutter app is the future client) and persisted in NVS, and
-   the base connects as STA from NVS. (User rotates the real-world AP
-   password out of band — the old one sat in a public repo.)
-   Status: implemented + both apps build clean; awaiting flash proof on the
-   base (recv on /dev/ttyUSB1) before this step lands.
+1. **DONE (2026-09-14, flashed + proven on base).** AP provisioning REST API
+   with mDNS; creds purged from tree and board NVS; STA gated on provisioned.
+   Remaining: user POSTs real creds and rotates the leaked AP password.
 2. **Wire up or drop the relay component.** Done when relay GPIOs are driven
    outputs with `initRelay()` called and `relayTask` registered, or the
    component is removed — no floating relay inputs on the vehicle node.
