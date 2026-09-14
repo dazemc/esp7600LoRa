@@ -46,7 +46,9 @@ corrected.
   never live only in the transcript.
 - After each phase is merged, walk every open suggestion with the user and
   settle its decision — keep, condense, move, escalate, or dismiss — before
-  the next phase starts.
+  the next phase starts. Settle one item at a time: present a single item,
+  wait for its decision, record it, then move to the next. Never batch
+  multiple items into one question.
 - Networked Git/GitHub commands (`fetch`, `push`, `gh`) run outside any
   sandbox; sandboxed credential or network failures are not authoritative.
 
