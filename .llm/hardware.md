@@ -8,8 +8,8 @@ or pin code.
 - `send/` (vehicle, `isVehicle = true`): telemetry → `loraTXQueue` → LoRa TX.
   Tasks: LoRa RX, LoRa TX, Display, Serial, Voltage monitor, Telemetry.
 - `recv/` (base, `isVehicle = false`): LoRa RX → `displayQueue` +
-  `serialQueue`, plus `wifi_sta` STA uplink. Currently also inits Wi-Fi STA
-  in `app_main()`.
+  `serialQueue`, plus `wifi_sta` (APSTA provisioning + STA uplink,
+  see Wi-Fi provisioning below).
 - Both are ESP-IDF apps sharing `components/` via
   `EXTRA_COMPONENT_DIRS ../components/`.
 
@@ -29,8 +29,9 @@ same phase — a one-sided packet edit breaks the link silently.
 
 All queues length 10. Vehicle RX/TX item sizes follow `EventLoRaRX` /
 `EventLoRaTX`; display and serial follow `EventDisplay` / `EventSerial`.
-Task stacks: LoRa RX 2048–3096, LoRa TX 2048, Display 3096–4096, Serial
-2048–3096, Voltage 2048, Telemetry 1024. Priorities: radio tasks 3,
+Task stacks (`send` / `recv`): LoRa RX 2048 / 3096, LoRa TX 4096 / 2048,
+Display 3096 / 4096, Serial 2048 / 3096, Voltage 2048 (send only), Telemetry
+2048 (send only), Relay 2048 (send only). Priorities: radio tasks 3,
 everything else 2. Growing a queue or shrinking a stack needs a
 runtime-proven step, not just a clean build.
 
