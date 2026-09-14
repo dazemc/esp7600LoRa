@@ -15,6 +15,6 @@ void debugRemainingQueue(const char *queueName, char *loc,
 uint8_t incrementPacketId(uint8_t &packetIdTX);
 
 LoRaCompactPacket packetToCompactPacket(LoRaPacket loraPacket,
-                                        uint8_t packetIdTX);
+                                        uint8_t packetId);
 
 LoRaPacket unpackPacket(LoRaCompactPacket packet);

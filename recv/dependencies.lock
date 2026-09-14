@@ -14,13 +14,35 @@ dependencies:
     - esp32s3
     - esp32c3
     version: 1.1.2
+  espressif/cjson:
+    component_hash: e788323270d90738662d66fffa910bfe1fba019bba087f01557e70c40485b469
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.7.19~2
+  espressif/mdns:
+    component_hash: 3ba256ac95e07c274be53cbd73f06cb846c403b61e8fbdf1be57bdb79db7a63e
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.12.0
   idf:
     source:
       type: idf
     version: 6.0.2
 direct_dependencies:
 - chill-sam/ssd1306
+- espressif/cjson
+- espressif/mdns
 - idf
-manifest_hash: 67e0314cd1cd35d478ad7656e97204aeb5f0d2a048769ada79634dfda838a70e
+manifest_hash: f2af3783de8f54d25eeb8625746f310dcd4bc4a32cd6434883e3c02962453e13
 target: esp32
 version: 3.0.0
