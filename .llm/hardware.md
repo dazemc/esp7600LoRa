@@ -40,6 +40,15 @@ Cellular backhaul is planned, not yet in the tree. When it lands it gets
 its own component (never inline AT chatter in `main.cpp`) and its own
 `.llm/` note update.
 
+## Relay (decision 2026-09-14)
+
+`send` drives 6 active-low relay GPIOs (13, 17, 22, 23, 25, 33), parked HIGH
+= off at boot via `initRelay()`, with a boot-time drive/readback log.
+Bench note: against an unpowered relay board the pins read back LOW
+(optocoupler clamp) — that is a bench artifact, not a drive failure.
+`vehicleState` seeds from the readback, so it reflects reality. Display
+init never aborts: a missing OLED degrades to headless, telemetry first.
+
 ## Wi-Fi provisioning (decision 2026-09-14)
 
 The base offers a config AP when no STA credentials are stored in NVS.

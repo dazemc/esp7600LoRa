@@ -8,9 +8,11 @@ Remove steps as they land — never check them off.
 1. **DONE (2026-09-14, flashed + proven on base).** AP provisioning REST API
    with mDNS; creds purged from tree and board NVS; STA gated on provisioned.
    Remaining: user POSTs real creds and rotates the leaked AP password.
-2. **Wire up or drop the relay component.** Done when relay GPIOs are driven
-   outputs with `initRelay()` called and `relayTask` registered, or the
-   component is removed — no floating relay inputs on the vehicle node.
+2. **DONE (2026-09-14, flashed + proven on sender).** Relay GPIOs driven
+   outputs parked HIGH with boot-time readback log; relayTask registered.
+   Found + fixed en route: relayState signature mismatch (latent link
+   failure), missing gpio requirement, and a display-abort reboot loop
+   (OLED probe now degrades gracefully — telemetry never dies for a screen).
 3. **Fix packet ID off-by-one.** Done when the transmitted ID equals the
    logged/displayed ID (single increment path), proven by matching sender
    and receiver logs over several packets.
