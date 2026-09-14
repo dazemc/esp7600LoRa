@@ -46,4 +46,6 @@ The base offers a config AP when no STA credentials are stored in NVS.
 Provisioning is a JSON REST API over `esp_http_server` — no HTML pages;
 a Flutter app is the future client. `POST /api/wifi` {ssid, pass} stores
 creds in NVS and switches to STA; `GET /api/status` reports mode and link
-state. Credentials never appear in tracked files.
+state. Credentials never appear in tracked files. ESP32 is 2.4 GHz-only:
+provision the 2.4 GHz SSID (`Aetheryte_2.4`, not the 5 GHz `Aetheryte` —
+verified live 2026-09-14, end-to-end join + mDNS on the home LAN).
