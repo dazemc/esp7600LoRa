@@ -11,6 +11,8 @@ Remove steps as they land — never check them off.
    (no HTML — a Flutter app is the future client) and persisted in NVS, and
    the base connects as STA from NVS. (User rotates the real-world AP
    password out of band — the old one sat in a public repo.)
+   Status: implemented + both apps build clean; awaiting flash proof on the
+   base (recv on /dev/ttyUSB1) before this step lands.
 2. **Wire up or drop the relay component.** Done when relay GPIOs are driven
    outputs with `initRelay()` called and `relayTask` registered, or the
    component is removed — no floating relay inputs on the vehicle node.
