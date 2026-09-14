@@ -6,4 +6,8 @@ idf_component_register(
   PRIV_REQUIRES
   esp_wifi
   esp_netif
+  esp_event
+  esp_http_server
+  cjson
+  mdns
   nvs_flash)
