@@ -39,3 +39,11 @@ runtime-proven step, not just a clean build.
 Cellular backhaul is planned, not yet in the tree. When it lands it gets
 its own component (never inline AT chatter in `main.cpp`) and its own
 `.llm/` note update.
+
+## Wi-Fi provisioning (decision 2026-09-14)
+
+The base offers a config AP when no STA credentials are stored in NVS.
+Provisioning is a JSON REST API over `esp_http_server` — no HTML pages;
+a Flutter app is the future client. `POST /api/wifi` {ssid, pass} stores
+creds in NVS and switches to STA; `GET /api/status` reports mode and link
+state. Credentials never appear in tracked files.
