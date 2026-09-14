@@ -53,8 +53,11 @@ corrected.
 ## Flash discipline
 
 Flash commands name the port and the app explicitly
-(`idf.py -p /dev/ttyUSB0 flash monitor` from `send/` or `recv/`). Confirm
-both with the user before flashing. Never flash `send/` onto the base
+(`idf.py -p /dev/ttyUSB0 flash monitor` from `send/` or `recv/`). Standing
+bench rule (2026-09-14): while both nodes are on the test bench, flash freely
+without per-flash confirmation — sender is /dev/ttyUSB0 (`...65:34`), base is
+/dev/ttyUSB1 (`...68:60`). Revert to explicit confirmation once hardware
+deploys. Never flash `send/` onto the base
 board or `recv/` onto the vehicle board. Release the serial port when done.
 
 ## opencode
