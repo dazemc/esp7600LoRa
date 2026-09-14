@@ -10,6 +10,7 @@ QueueHandle_t displayQueue = nullptr;
 DisplayData displayData{};
 
 static ssd1306_handle_t displayHandle = nullptr;
+static bool displayReady = false;
 static int oledX = 0;
 static int oledY = 0;
 
@@ -31,7 +32,10 @@ static i2c_master_bus_config_t bus_config = {
 void initDisplay() {
   i2c_master_bus_handle_t bus_handle;
 
-  ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+  if (i2c_new_master_bus(&bus_config, &bus_handle) != ESP_OK) {
+    printf("display: no I2C bus, continuing headless\n");
+    return;
+  }
 
   ssd1306_config_t cfg{};
 
@@ -43,7 +47,11 @@ void initDisplay() {
   cfg.iface.i2c.addr = 0x3C;
   cfg.iface.i2c.rst_gpio = OLED_RST;
 
-  ESP_ERROR_CHECK(ssd1306_new_i2c(&cfg, &displayHandle));
+  if (ssd1306_new_i2c(&cfg, &displayHandle) != ESP_OK) {
+    printf("display: no OLED response, continuing headless\n");
+    return;
+  }
+  displayReady = true;
 
   displayData.disp = displayHandle;
   displayData.OledX = oledX;
@@ -59,6 +67,9 @@ void displayTask(void *arg) {
       switch (event.type) {
 
       case EVENT_DISPLAY_LORA_TX: {
+        if (!displayReady) {
+          break;
+        }
         const char *prepend = "Sending:\nVoltage: ";
 
         snprintf(displayData.message, sizeof(displayData.message), "%s%.4f",
@@ -75,6 +86,9 @@ void displayTask(void *arg) {
       }
 
       case EVENT_DISPLAY_LORA_RX: {
+        if (!displayReady) {
+          break;
+        }
         char message[128];
         int offset = 0;
         const char *prepend = "Received;\n";

@@ -13,6 +13,8 @@ void initRelay() {
     gpio_set_direction(pin, GPIO_MODE_OUTPUT);
     // digitalWrite(pin, HIGH);
     gpio_set_level(pin, 1);
+    printf("relay: pin %d driven HIGH, readback %d\n", pin,
+           gpio_get_level(pin));
   }
   // TODO get a gpio expander (MCP23017) as I will need to sense relay state
   // when vehicle is operated. This will do for remote start and monitoring.
