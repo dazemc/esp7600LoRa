@@ -7,4 +7,5 @@ idf_component_register(
   esp_driver_gpio
   events
   event_bus
-  telemetry)
+  telemetry
+  mcp23x17)

@@ -44,9 +44,13 @@ static const EventConfig events[]{
 static const SemaphoreConfig semaphores[]{{&telemetrySemaphore}};
 
 extern "C" void app_main() {
+  //
   isVehicle = true;
   initLoRa();
   initRelay();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));
+  //
+  // testMcp23017Pins();
+  testAssignedPins();
 }
