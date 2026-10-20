@@ -8,7 +8,6 @@ idf_component_register(
   serial
   lora
   voltage
-  relay
   events
   event_bus
   wifi_sta)

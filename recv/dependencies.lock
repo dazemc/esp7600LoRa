@@ -14,6 +14,46 @@ dependencies:
     - esp32s3
     - esp32c3
     version: 1.1.2
+  esp-idf-lib/esp_idf_lib_helpers:
+    component_hash: 689853bb8993434f9556af0f2816e808bf77b5d22100144b21f3519993daf237
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32
+    - esp32c2
+    - esp32c3
+    - esp32c5
+    - esp32c6
+    - esp32c61
+    - esp32h2
+    - esp32p4
+    - esp32s2
+    - esp32s3
+    version: 1.4.0
+  esp-idf-lib/i2cdev:
+    component_hash: ad8981cc64533dcaced5107d72e42bcebe79345e194e82795792af531b300ce3
+    dependencies:
+    - name: esp-idf-lib/esp_idf_lib_helpers
+      registry_url: https://components.espressif.com
+      require: private
+      version: '*'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32
+    - esp32c2
+    - esp32c3
+    - esp32c5
+    - esp32c6
+    - esp32c61
+    - esp32h2
+    - esp32p4
+    - esp32s2
+    - esp32s3
+    version: 2.1.2
   espressif/cjson:
     component_hash: e788323270d90738662d66fffa910bfe1fba019bba087f01557e70c40485b469
     dependencies:
@@ -40,9 +80,11 @@ dependencies:
     version: 6.0.2
 direct_dependencies:
 - chill-sam/ssd1306
+- esp-idf-lib/esp_idf_lib_helpers
+- esp-idf-lib/i2cdev
 - espressif/cjson
 - espressif/mdns
 - idf
-manifest_hash: f2af3783de8f54d25eeb8625746f310dcd4bc4a32cd6434883e3c02962453e13
+manifest_hash: 41176bb920bdae19f6e13284110b901fabf75685ffb31b0a40a9ba40fd4a7671
 target: esp32
 version: 3.0.0

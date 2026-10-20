@@ -1,0 +1,32 @@
+dependencies:
+  esp-idf-lib/esp_idf_lib_helpers:
+    version: '*'
+  esp-idf-lib/i2cdev:
+    version: '*'
+description: Driver for I2C/SPI 16 bit GPIO expanders MCP23017/MCP23S17
+discussion: https://github.com/esp-idf-lib/core/discussions
+documentation: https://esp-idf-lib.github.io/mcp23x17/
+files:
+  exclude:
+  - docs/**/*
+issues: https://github.com/esp-idf-lib/mcp23x17/issues
+license: BSD-3-Clause
+maintainers:
+- Ruslan V. Uss (@UncleRus) <unclerus@gmail.com>
+repository: git://github.com/esp-idf-lib/mcp23x17.git
+repository_info:
+  commit_sha: 10ea2fd501526c7d066293751d74aa66625275a0
+  path: .
+targets:
+- esp32
+- esp32c2
+- esp32c3
+- esp32c5
+- esp32c6
+- esp32c61
+- esp32h2
+- esp32p4
+- esp32s2
+- esp32s3
+url: https://github.com/esp-idf-lib/core
+version: 1.2.0
