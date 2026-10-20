@@ -7,4 +7,7 @@ idf_component_register(
   events
   PRIV_REQUIRES
   utils
-  event_bus)
+  esp_driver_gpio
+  event_bus
+  esp_driver_uart
+  relay)

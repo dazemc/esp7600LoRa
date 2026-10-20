@@ -96,7 +96,6 @@ void testAssignedPins() {
 
 bool togglePinState(uint8_t pin) {
   uint32_t level;
-  // bool pinState = gpio_get_level(pin);
   mcp23x17_get_level(&mcp, pin, &level);
   bool pinState = (level == 1);
   pinState = !pinState;
@@ -104,7 +103,14 @@ bool togglePinState(uint8_t pin) {
   return pinState;
 }
 
-bool relayState(gpio_num_t pin) { return gpio_get_level(pin) == 0; }
+bool relayState(uint8_t pin) {
+  uint32_t level = 1;
+  esp_err_t err = mcp23x17_get_level(&mcp, pin, &level);
+  if (err != ESP_OK) {
+    return false;
+  }
+  return (level == 0);
+}
 
 void relayTask(void *arg) {
   // This will recieve state from LoRa or Serial via Raspberry Pi 4g modem, then
@@ -120,11 +126,30 @@ void relayTask(void *arg) {
         vehicleState.acc = togglePinState(ACC);
         xSemaphoreGive(telemetrySemaphore);
         break;
-      case EVENT_TOGGLE_IGN:
+      case EVENT_TOGGLE_IGN: {
         // const time for now (2-3s), change when I build detection... maybe
         // alternator current or rpm
-        // TODO
+        // TODO: read/asses ignition state, for now set it to off
+        uint32_t level = 1;
+
+        esp_err_t err = mcp23x17_get_level(&mcp, IGN, &level);
+        printf("IGN pin=%u initial level=%lu err=%s\n", IGN,
+               (unsigned long)level, esp_err_to_name(err));
+
+        err = mcp23x17_set_level(&mcp, IGN, 0);
+        printf("IGN set LOW: %s\n", esp_err_to_name(err));
+
+        vTaskDelay(pdMS_TO_TICKS(4000));
+
+        err = mcp23x17_get_level(&mcp, IGN, &level);
+        printf("IGN after LOW: level=%lu err=%s\n", (unsigned long)level,
+               esp_err_to_name(err));
+
+        err = mcp23x17_set_level(&mcp, IGN, 1);
+        printf("IGN set HIGH: %s\n", esp_err_to_name(err));
+
         break;
+      }
       case EVENT_TOGGLE_HEATER:
         vehicleState.heater = togglePinState(HEATER);
         xSemaphoreGive(telemetrySemaphore);

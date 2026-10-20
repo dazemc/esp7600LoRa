@@ -28,9 +28,10 @@ PIN | RELAY
 #define RUNNING_LIGHTS 1 // r4
 #define GLOW_PLUGS 10    // r5
 #define HEATER 2         // r6
+
 #define I2C_PORT I2C_NUM_1
-#define I2C_SDA GPIO_NUM_25
-#define I2C_SCL GPIO_NUM_33
+#define I2C_SDA GPIO_NUM_33
+#define I2C_SCL GPIO_NUM_22
 #define MCP_ADDR 0x20
 
 inline constexpr uint8_t relayPins[] = {
@@ -40,7 +41,7 @@ inline constexpr uint8_t relayPins[] = {
 void relayTask(void *arg);
 esp_err_t initRelay();
 void relayCycleTest();
-bool relayState(gpio_num_t pin);
+bool relayState(uint8_t pin);
 void testMcp23017Pins();
 void testAssignedPins();
 

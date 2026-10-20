@@ -52,5 +52,5 @@ extern "C" void app_main() {
   initEventBus(events, sizeof(events) / sizeof(events[0]));
   //
   // testMcp23017Pins();
-  testAssignedPins();
+  // testAssignedPins();
 }

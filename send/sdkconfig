@@ -3261,6 +3261,15 @@ CONFIG_WL_SECTOR_SIZE=4096
 # end of Wear Levelling
 
 #
+# MCP23x17
+#
+# default:
+CONFIG_MCP23X17_IFACE_I2C=y
+# default:
+# CONFIG_MCP23X17_IFACE_SPI is not set
+# end of MCP23x17
+
+#
 # I2C Device Library
 #
 # default:
@@ -3278,15 +3287,6 @@ CONFIG_I2CDEV_TIMEOUT=1000
 # default:
 # CONFIG_I2CDEV_NOLOCK is not set
 # end of I2C Device Library
-
-#
-# MCP23x17
-#
-# default:
-CONFIG_MCP23X17_IFACE_I2C=y
-# default:
-# CONFIG_MCP23X17_IFACE_SPI is not set
-# end of MCP23x17
 
 #
 # cJSON

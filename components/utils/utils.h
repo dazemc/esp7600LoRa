@@ -3,7 +3,7 @@
 #include "stdio.h"
 #include "types.h"
 
-extern const bool DEBUG;
+extern bool DEBUG;
 extern bool isVehicle;
 
 void debugRemainingStackSize(const char *taskName, char *loc,

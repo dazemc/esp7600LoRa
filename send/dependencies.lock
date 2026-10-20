@@ -18,7 +18,7 @@ dependencies:
     component_hash: 689853bb8993434f9556af0f2816e808bf77b5d22100144b21f3519993daf237
     dependencies: []
     source:
-      registry_url: https://components.espressif.com
+      registry_url: https://components.espressif.com/
       type: service
     targets:
     - esp32
@@ -40,7 +40,7 @@ dependencies:
       require: private
       version: '*'
     source:
-      registry_url: https://components.espressif.com
+      registry_url: https://components.espressif.com/
       type: service
     targets:
     - esp32
@@ -55,30 +55,10 @@ dependencies:
     - esp32s3
     version: 2.1.2
   esp-idf-lib/mcp23x17:
-    component_hash: 1bfb72285ef6c9962968816cadd0434f6b27aa36be5868bf612e2a7d69653cca
-    dependencies:
-    - name: esp-idf-lib/esp_idf_lib_helpers
-      registry_url: https://components.espressif.com
-      require: private
-      version: '*'
-    - name: esp-idf-lib/i2cdev
-      registry_url: https://components.espressif.com
-      require: private
-      version: '*'
+    dependencies: []
     source:
-      registry_url: https://components.espressif.com/
-      type: service
-    targets:
-    - esp32
-    - esp32c2
-    - esp32c3
-    - esp32c5
-    - esp32c6
-    - esp32c61
-    - esp32h2
-    - esp32p4
-    - esp32s2
-    - esp32s3
+      path: ../components/esp-idf-lib__mcp23x17
+      type: local
     version: 1.2.0
   espressif/cjson:
     component_hash: e788323270d90738662d66fffa910bfe1fba019bba087f01557e70c40485b469
@@ -106,10 +86,12 @@ dependencies:
     version: 6.0.2
 direct_dependencies:
 - chill-sam/ssd1306
+- esp-idf-lib/esp_idf_lib_helpers
+- esp-idf-lib/i2cdev
 - esp-idf-lib/mcp23x17
 - espressif/cjson
 - espressif/mdns
 - idf
-manifest_hash: 89a85745284ba105aa2b26ca25ae3867961d248ad81802df2f43fb1b290c9425
+manifest_hash: 562fa269b075e1df8e5030417687b25f5420f49823b4c1a66c686365d6d2cd13
 target: esp32
 version: 3.0.0
