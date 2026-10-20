@@ -55,29 +55,6 @@ void testMcp23017Pins() {
   }
 }
 
-// void initRelay() {
-//   for (gpio_num_t pin : relayPins) {
-//     // pinMode(pin, OUTPUT);
-//     gpio_set_direction(pin, GPIO_MODE_OUTPUT);
-//     // digitalWrite(pin, HIGH);
-//     gpio_set_level(pin, 1);
-//     printf("relay: pin %d driven HIGH, readback %d\n", pin,
-//            gpio_get_level(pin));
-//   }
-//   // TODO get a gpio expander (MCP23017) as I will need to sense relay state
-//   // when vehicle is operated. This will do for remote start and monitoring.
-//
-//   // init vehicle state pins to off on boot, this will be changed when I get
-//   the
-//   // gpio expansion board and can read the state directly
-//   vehicleState.acc = relayState(ACC);
-//   vehicleState.headlights = relayState(HEADLIGHTS);
-//   vehicleState.runningLights = relayState(RUNNING_LIGHTS);
-//   vehicleState.heater = relayState(HEATER);
-//   vehicleState.glowPlugs = relayState(GLOW_PLUGS);
-//   vehicleState.ign = OFF;
-// }
-
 void testAssignedPins() {
   while (1) {
     for (uint8_t pin : relayPins) {
@@ -94,78 +71,227 @@ void testAssignedPins() {
   }
 }
 
-bool togglePinState(uint8_t pin) {
-  uint32_t level;
-  mcp23x17_get_level(&mcp, pin, &level);
-  bool pinState = (level == 1);
-  pinState = !pinState;
-  mcp23x17_set_level(&mcp, pin, pinState ? 0 : 1);
-  return pinState;
+esp_err_t togglePinState(uint8_t pin, bool *newState) {
+  bool currentState;
+  esp_err_t err = relayState(pin, &currentState);
+
+  if (err != ESP_OK) {
+    return err;
+  }
+
+  // Currently ON -> write HIGH; currently OFF -> write LOW.
+  err = mcp23x17_set_level(&mcp, pin, currentState ? 1 : 0);
+
+  if (err != ESP_OK) {
+    return err;
+  }
+
+  *newState = !currentState;
+  return ESP_OK;
 }
 
-bool relayState(uint8_t pin) {
+esp_err_t relayState(uint8_t pin, bool *state) {
   uint32_t level = 1;
   esp_err_t err = mcp23x17_get_level(&mcp, pin, &level);
   if (err != ESP_OK) {
-    return false;
+    return err;
   }
-  return (level == 0);
+  *state = (level == 0);
+  return ESP_OK;
+}
+
+esp_err_t allOffSequence() {
+  esp_err_t err = ESP_FAIL;
+  for (uint8_t pin : relayPins) {
+    err = mcp23x17_set_level(&mcp, pin, 1);
+  }
+  if (err != ESP_OK) {
+    return err;
+  }
+  return ESP_OK;
+}
+
+esp_err_t glowPlugSequence() {
+  esp_err_t err = relayState(GLOW_PLUGS, &vehicleState.glowPlugs);
+  if (err != ESP_OK) {
+    printf("GLOW_PLUGS read state failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  if (vehicleState.glowPlugs) {
+    err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
+    if (err != ESP_OK) {
+      printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
+      return err;
+    }
+  }
+  err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
+
+  if (err != ESP_OK) {
+    printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  vTaskDelay(pdMS_TO_TICKS(4000));
+  err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
+  if (err != ESP_OK) {
+    printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  return ESP_OK;
+}
+
+esp_err_t accSequence() {
+  if (!vehicleState.acc) {
+    esp_err_t err = togglePinState(ACC, &vehicleState.acc);
+    if (err != ESP_OK) {
+      printf("ACC toggle failed: %s\n", esp_err_to_name(err));
+      return err;
+    }
+  }
+  return ESP_OK;
+}
+
+esp_err_t runningLightsSequence() {
+  esp_err_t err = togglePinState(RUNNING_LIGHTS, &vehicleState.runningLights);
+  if (err != ESP_OK) {
+    printf("RUNNING_LIGHTS toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  return ESP_OK;
+}
+
+esp_err_t headLightsSequence() {
+  esp_err_t err = togglePinState(HEADLIGHTS, &vehicleState.headlights);
+  if (err != ESP_OK) {
+    printf("HEADLIGHTS toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  return ESP_OK;
+}
+
+esp_err_t heaterSequence() {
+  esp_err_t err = togglePinState(HEATER, &vehicleState.heater);
+  if (err != ESP_OK) {
+    printf("HEATER toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  return ESP_OK;
+}
+
+esp_err_t ignSequence() {
+  bool ignState;
+  esp_err_t err = accSequence();
+  runningLightsSequence();
+  if (err != ESP_OK) {
+    return err;
+  }
+  switch (vehicleState.ign) {
+  case OFF:
+    ignState = false;
+    break;
+  case START:
+    ignState = true;
+    break;
+  case ON:
+    printf("Vehicle already started!");
+    break;
+  }
+  if (vehicleState.ign == ON) {
+    return ESP_FAIL;
+  }
+  glowPlugSequence();
+  err = togglePinState(IGN, &ignState);
+  if (err != ESP_OK) {
+    printf("IGN first toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(2000));
+
+  err = togglePinState(IGN, &ignState);
+  if (err != ESP_OK) {
+    printf("IGN second toggle failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
+  return ESP_OK;
 }
 
 void relayTask(void *arg) {
-  // This will recieve state from LoRa or Serial via Raspberry Pi 4g modem, then
-  // send update the same way it came.
+  // Receive relay events from LoRa or Serial via the Raspberry Pi/modem,
+  // then notify telemetry when a relay state changes.
+
   if (initRelay() != ESP_OK) {
+    printf("Relay initialization failed.\n");
+    vTaskDelete(nullptr);
     return;
   }
+
   EventToggle event;
+
   while (true) {
-    if (xQueueReceive(relayQueue, &event, portMAX_DELAY)) {
-      switch (event.type) {
-      case EVENT_TOGGLE_ACC:
-        vehicleState.acc = togglePinState(ACC);
-        xSemaphoreGive(telemetrySemaphore);
-        break;
-      case EVENT_TOGGLE_IGN: {
-        // const time for now (2-3s), change when I build detection... maybe
-        // alternator current or rpm
-        // TODO: read/asses ignition state, for now set it to off
-        uint32_t level = 1;
+    // break on critical systems, treat the rest as warnings
+    if (xQueueReceive(relayQueue, &event, portMAX_DELAY) != pdTRUE) {
+      continue;
+    }
 
-        esp_err_t err = mcp23x17_get_level(&mcp, IGN, &level);
-        printf("IGN pin=%u initial level=%lu err=%s\n", IGN,
-               (unsigned long)level, esp_err_to_name(err));
+    esp_err_t err = ESP_OK;
 
-        err = mcp23x17_set_level(&mcp, IGN, 0);
-        printf("IGN set LOW: %s\n", esp_err_to_name(err));
+    switch (event.type) {
 
-        vTaskDelay(pdMS_TO_TICKS(4000));
-
-        err = mcp23x17_get_level(&mcp, IGN, &level);
-        printf("IGN after LOW: level=%lu err=%s\n", (unsigned long)level,
-               esp_err_to_name(err));
-
-        err = mcp23x17_set_level(&mcp, IGN, 1);
-        printf("IGN set HIGH: %s\n", esp_err_to_name(err));
-
+    case EVENT_TOGGLE_ACC: {
+      err = accSequence();
+      if (err != ESP_OK) {
         break;
       }
-      case EVENT_TOGGLE_HEATER:
-        vehicleState.heater = togglePinState(HEATER);
-        xSemaphoreGive(telemetrySemaphore);
-        break;
-      case EVENT_TOGGLE_GLOWPLUGS:
-        // TODO const time for now (3-5s), change when I get coolant temp sensor
-        break;
-      case EVENT_TOGGLE_HEADLIGHTS:
-        vehicleState.headlights = togglePinState(HEADLIGHTS);
-        xSemaphoreGive(telemetrySemaphore);
-        break;
-      case EVENT_TOGGLE_RUNNINGLIGHTS:
-        vehicleState.runningLights = togglePinState(RUNNING_LIGHTS);
-        xSemaphoreGive(telemetrySemaphore);
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+    }
+
+    case EVENT_TOGGLE_IGN: {
+      printf("DEBUG: IGN event received\n");
+
+      err = ignSequence();
+
+      if (err != ESP_OK) {
+        printf("DEBUG: ignSequence failed: %s\n", esp_err_to_name(err));
         break;
       }
+
+      printf("DEBUG: ignSequence completed\n");
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+    }
+
+    case EVENT_TOGGLE_HEATER:
+      heaterSequence();
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+
+    case EVENT_TOGGLE_GLOWPLUGS:
+      glowPlugSequence();
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+
+    case EVENT_TOGGLE_HEADLIGHTS:
+      headLightsSequence();
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+
+    case EVENT_TOGGLE_RUNNINGLIGHTS:
+      runningLightsSequence();
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+
+    case EVENT_TOGGLE_ALL_OFF: {
+      esp_err_t err = allOffSequence();
+      if (err != ESP_OK) {
+        printf("ERROR: could not toggle all relays\n");
+      }
+      xSemaphoreGive(telemetrySemaphore);
+      break;
+    }
+    default:
+      printf("Unknown relay event: %d\n", (int)event.type);
+      break;
     }
   }
 }
