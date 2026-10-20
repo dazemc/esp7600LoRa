@@ -13,6 +13,7 @@ enum EventToggleType {
   EVENT_TOGGLE_HEATER,
   EVENT_TOGGLE_GLOWPLUGS,
   EVENT_TOGGLE_IGN,
+  EVENT_TOGGLE_ALL_OFF,
 };
 
 enum EventLoRaTXType {

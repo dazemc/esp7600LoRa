@@ -64,7 +64,6 @@ static void readBuffer() {
                 '\0'; // Force null termination
 
             xQueueSend(serialQueue, &eventSerialIn, pdMS_TO_TICKS(10));
-
             // Reset buffer for the next message
             line_pos = 0;
           }
@@ -143,13 +142,38 @@ void serialTask(void *arg) {
         break;
       }
       case EVENT_SERIAL_IN: {
+
+        EventToggle eventToggle{};
         char *msg = event.serialIn.line;
         if (!strcmp("START", msg)) {
           if (DEBUG) {
-            printf("\033[1;34mDEBUG: Ignition start received:\033[0m\n");
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
-          EventToggle eventToggle{};
           eventToggle.type = EVENT_TOGGLE_IGN;
+          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+        } else if (!strcmp("HEADLIGHTS", msg)) {
+          eventToggle.type = EVENT_TOGGLE_HEADLIGHTS;
+          if (DEBUG) {
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
+          }
+          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+        } else if (!strcmp("RUNNINGLIGHTS", msg)) {
+          eventToggle.type = EVENT_TOGGLE_RUNNINGLIGHTS;
+          if (DEBUG) {
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
+          }
+          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+        } else if (!strcmp("HEATER", msg)) {
+          eventToggle.type = EVENT_TOGGLE_HEATER;
+          if (DEBUG) {
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
+          }
+          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+        } else if (!strcmp("ALLOFF", msg)) {
+          eventToggle.type = EVENT_TOGGLE_ALL_OFF;
+          if (DEBUG) {
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
+          }
           xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
         } else {
           if (DEBUG) {
