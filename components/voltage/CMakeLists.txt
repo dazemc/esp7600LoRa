@@ -6,6 +6,7 @@ idf_component_register(
   REQUIRES
   esp_adc
   PRIV_REQUIRES
+  adc_shared
   serial
   utils
   freertos
