@@ -1,0 +1,11 @@
+idf_component_register(
+  SRCS
+  "adc_shared.cpp"
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  events
+  event_bus
+  lora
+  serial
+  utils)

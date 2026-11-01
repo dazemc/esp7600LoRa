@@ -2,6 +2,8 @@
 
 #include "stdint.h"
 #include "freertos/FreeRTOS.h"
+#include "hal/adc_types.h"
+#include "esp_adc/adc_oneshot.h"
 
 struct TaskConfig {
   TaskFunction_t function;
@@ -16,6 +18,11 @@ struct QueueConfig {
   QueueHandle_t *handle;
   size_t length;
   size_t itemSize;
+};
+
+struct AdcConfig {
+  adc_oneshot_unit_handle_t handle;
+  adc_unit_t adcUnit;
 };
 
 struct SemaphoreConfig {

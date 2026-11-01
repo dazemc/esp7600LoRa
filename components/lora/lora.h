@@ -3,13 +3,14 @@
 #include "freertos/FreeRTOS.h"
 
 inline constexpr long LORA_FREQ = 915E6;
-inline constexpr int LORA_CS = 18;
-inline constexpr int LORA_SCK = 5;
-inline constexpr int LORA_MOSI = 27;
-inline constexpr int LORA_MISO = 19;
-inline constexpr int LORA_RST = 14;
-inline constexpr int LORA_DIO0 = 26;
-inline constexpr int LORA_DIO1 = 35;
+inline constexpr int LORA_CS = 8;
+inline constexpr int LORA_SCK = 9;
+inline constexpr int LORA_MOSI = 10;
+inline constexpr int LORA_MISO = 11;
+inline constexpr int LORA_RST = 12;
+// inline constexpr int LORA_DIO0 = 26;
+inline constexpr int LORA_BUSY = 13;
+inline constexpr int LORA_DIO1 = 14;
 
 void initLoRa();
 void sendLoRaTask(void *arg);

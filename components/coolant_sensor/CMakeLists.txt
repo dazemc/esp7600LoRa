@@ -1,0 +1,15 @@
+idf_component_register(
+  SRCS
+  "coolant_sensor.cpp"
+  INCLUDE_DIRS
+  "."
+  REQUIRES
+  esp_adc
+  PRIV_REQUIRES
+  adc_shared
+  serial
+  freertos
+  log
+  events
+  types
+  event_bus)

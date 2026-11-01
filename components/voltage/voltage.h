@@ -12,7 +12,6 @@
 #include <freertos/FreeRTOS.h>
 #include <stdio.h>
 
-#define ADC_UNIT ADC_UNIT_1
 #define ADC_CHANNEL ADC_CHANNEL_4
 #define ADC_ATTEN ADC_ATTEN_DB_12
 

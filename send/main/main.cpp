@@ -6,8 +6,10 @@
 #include "serial.h"
 #include "telemetry.h"
 #include "voltage.h"
+#include "coolant_sensor.h"
 #include "relay.h"
 #include "utils.h"
+#include "adc_shared.h"
 
 static const QueueConfig recvLoRaRXQueueConf{
     .handle = &loraRXQueue, .length = 10, .itemSize = sizeof(EventLoRaRX)};
@@ -35,17 +37,24 @@ static const EventConfig events[]{
      .queueConfig = &serialQueueConf},
     {.taskConfig = {relayTask, "Relay", 2048, NULL, 2, NULL},
      .queueConfig = &relayQueueConf},
-    {.taskConfig = {voltageMonitorTask, "Voltage", 2048, NULL, 2, NULL},
+    {.taskConfig = {voltageMonitorTask, "Voltage", 2048, (void *)&adcConfig, 2,
+                    NULL},
+     .queueConfig = nullptr},
+    {.taskConfig = {thermistorMonitorTask, "Coolant Temperature", 2048,
+                    (void *)&adcConfig, 2, NULL},
      .queueConfig = nullptr},
     {.taskConfig = {telemetryTask, "Telemetry", 2048, NULL, 2, NULL},
      .queueConfig = nullptr},
 };
 
-static const SemaphoreConfig semaphores[]{{&telemetrySemaphore}};
+static const SemaphoreConfig semaphores[]{
+    {&telemetrySemaphore},
+};
 
 extern "C" void app_main() {
   //
   isVehicle = true;
+  initSharedAdc();
   initLoRa();
   initRelay();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));

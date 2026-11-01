@@ -1,4 +1,3 @@
-#include <freertos/FreeRTOS.h>
 #include "display.h"
 #include "types.h"
 #include "events.h"
@@ -8,6 +7,13 @@
 
 QueueHandle_t displayQueue = nullptr;
 DisplayData displayData{};
+gpio_config_t vext_config = {
+    .pin_bit_mask = 1ULL << GPIO_NUM_36,
+    .mode = GPIO_MODE_OUTPUT,
+    .pull_up_en = GPIO_PULLUP_DISABLE,
+    .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    .intr_type = GPIO_INTR_DISABLE,
+};
 
 static ssd1306_handle_t displayHandle = nullptr;
 static bool displayReady = false;
@@ -29,7 +35,14 @@ static i2c_master_bus_config_t bus_config = {
         },
 };
 
+void initVext() {
+  gpio_config(&vext_config);
+  gpio_set_level(GPIO_NUM_36, 0);
+}
+
 void initDisplay() {
+  initVext();
+
   i2c_master_bus_handle_t bus_handle;
 
   if (i2c_new_master_bus(&bus_config, &bus_handle) != ESP_OK) {

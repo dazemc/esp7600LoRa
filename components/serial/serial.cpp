@@ -145,6 +145,7 @@ void serialTask(void *arg) {
 
         EventToggle eventToggle{};
         char *msg = event.serialIn.line;
+        // TODO: break this out into a utils function so lora can call it too
         if (!strcmp("START", msg)) {
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
