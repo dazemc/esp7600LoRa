@@ -9,6 +9,7 @@ idf_component_register(
   serial
   lora
   voltage
+  coolant_sensor
   telemetry
   display
   relay)

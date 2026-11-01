@@ -6,6 +6,7 @@
 #include "serial.h"
 #include "telemetry.h"
 #include "voltage.h"
+#include "coolant_sensor.h"
 #include "relay.h"
 #include "utils.h"
 
@@ -35,7 +36,11 @@ static const EventConfig events[]{
      .queueConfig = &serialQueueConf},
     {.taskConfig = {relayTask, "Relay", 2048, NULL, 2, NULL},
      .queueConfig = &relayQueueConf},
-    {.taskConfig = {voltageMonitorTask, "Voltage", 2048, NULL, 2, NULL},
+    // can share adc unit but what's the point if I am just building a adc
+    // expansion board
+    // {.taskConfig = {voltageMonitorTask, "Voltage", 2048, NULL, 2, NULL},
+    // .queueConfig = nullptr},
+    {.taskConfig = {thermistorMonitorTask, "Voltage", 2048, NULL, 2, NULL},
      .queueConfig = nullptr},
     {.taskConfig = {telemetryTask, "Telemetry", 2048, NULL, 2, NULL},
      .queueConfig = nullptr},

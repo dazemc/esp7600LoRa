@@ -76,6 +76,10 @@ struct EventSerialIn {
   char line[128];
 };
 
+struct EventSerialOut {
+  char line[128];
+};
+
 struct EventSerial {
   EventSerialType type;
   union {
@@ -84,5 +88,6 @@ struct EventSerial {
     EventToggle toggle;
     EventDebug debug;
     EventSerialIn serialIn;
+    EventSerialOut serialOut;
   };
 };
