@@ -40,6 +40,7 @@ enum EventSerialType {
   EVENT_SERIAL_LORA_WIFI,
   EVENT_SERIAL_DEBUG,
   EVENT_SERIAL_IN,
+  EVENT_SERIAL_OUT,
 };
 
 struct EventDebug {

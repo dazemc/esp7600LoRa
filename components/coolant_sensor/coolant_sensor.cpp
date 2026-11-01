@@ -100,7 +100,7 @@ void thermistorMonitorTask(void *arg) {
     const float temperature = thermistorTemperature(resistance);
 
     EventSerial event{};
-    event.type = EVENT_SERIAL_IN;
+    event.type = EVENT_SERIAL_OUT;
     std::snprintf(event.serialOut.line, sizeof(event.serialOut.line),
                   "Temperature: %.2f F\n"
                   "Raw Average: %d\n"
