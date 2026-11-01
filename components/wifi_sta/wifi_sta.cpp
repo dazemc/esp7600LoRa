@@ -18,8 +18,7 @@ static bool s_provisioned = false;
 static esp_netif_ip_info_t s_sta_ip = {};
 static httpd_handle_t s_server = nullptr;
 
-static bool loadCreds(char *ssid, size_t ssidLen, char *pass,
-                       size_t passLen) {
+static bool loadCreds(char *ssid, size_t ssidLen, char *pass, size_t passLen) {
   nvs_handle_t h;
   if (nvs_open("esp7600", NVS_READONLY, &h) != ESP_OK) {
     return false;
@@ -97,8 +96,7 @@ static esp_err_t wifiPostHandler(httpd_req_t *req) {
   nvs_handle_t h;
   if (nvs_open("esp7600", NVS_READWRITE, &h) != ESP_OK ||
       nvs_set_str(h, "sta_ssid", ssid) != ESP_OK ||
-      nvs_set_str(h, "sta_pass", pass) != ESP_OK ||
-      nvs_commit(h) != ESP_OK) {
+      nvs_set_str(h, "sta_pass", pass) != ESP_OK || nvs_commit(h) != ESP_OK) {
     nvs_close(h);
     httpd_resp_send_500(req);
     return ESP_FAIL;
@@ -137,11 +135,13 @@ static void startHttpd(void) {
       .uri = "/api/status",
       .method = HTTP_GET,
       .handler = statusHandler,
+      .user_ctx = nullptr,
   };
   httpd_uri_t wifiUri = {
       .uri = "/api/wifi",
       .method = HTTP_POST,
       .handler = wifiPostHandler,
+      .user_ctx = nullptr,
   };
   httpd_register_uri_handler(s_server, &statusUri);
   httpd_register_uri_handler(s_server, &wifiUri);
@@ -257,8 +257,7 @@ void initWiFi(void) {
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_LOGI(TAG, "joining provisioned STA %s", ssid);
   } else {
-    ESP_LOGI(TAG, "unprovisioned — join " SETUP_AP_SSID
-                  " and POST /api/wifi");
+    ESP_LOGI(TAG, "unprovisioned — join " SETUP_AP_SSID " and POST /api/wifi");
   }
 
   // Event handlers

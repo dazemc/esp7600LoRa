@@ -18,7 +18,8 @@ bool isVehicle{};
 static SemaphoreHandle_t radioMutex;
 
 static EspHal *hal = new EspHal(LORA_SCK, LORA_MISO, LORA_MOSI);
-static SX1276 radio = new Module(hal, LORA_CS, LORA_DIO0, LORA_RST, LORA_DIO1);
+
+static SX1262 radio = new Module(hal, LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY);
 
 static uint8_t packetIdTX = 0;
 static uint8_t lastPacketIdRX;
@@ -28,10 +29,10 @@ static const char *TAG = "lora";
 
 volatile bool receivedFlag = false;
 
-void setFlag(void) { receivedFlag = true; }
+void onDio1Action(void) { receivedFlag = true; }
 
 void initLoRa() {
-  ESP_LOGI(TAG, "[SX1276] Initializing ...");
+  ESP_LOGI(TAG, "[SX1262] Initializing ...");
   radioMutex = xSemaphoreCreateMutex();
 
   int state = radio.begin(915.0);
@@ -44,7 +45,7 @@ void initLoRa() {
   }
 
   radio.setSyncWord(0x14);
-  radio.setDio0Action(setFlag, hal->GpioInterruptRising);
+  radio.setDio1Action(onDio1Action);
   radio.startReceive();
 
   ESP_LOGI(TAG, "success!");
@@ -67,7 +68,7 @@ void serialLoRa(const LoRaPacket &packet) {
 void sendPacketDuplex(const LoRaPacket &packet) {
   xSemaphoreTake(radioMutex, portMAX_DELAY);
   receivedFlag = false;
-  radio.clearDio0Action();
+  radio.clearDio1Action();
 
   LoRaCompactPacket compactPacket = packetToCompactPacket(packet, packetIdTX);
   int state = radio.transmit((uint8_t *)&compactPacket, sizeof(compactPacket));
@@ -75,7 +76,7 @@ void sendPacketDuplex(const LoRaPacket &packet) {
     ESP_LOGE(TAG, "transmit failed, code %d", state);
   }
 
-  radio.setDio0Action(setFlag, hal->GpioInterruptRising);
+  radio.setDio1Action(onDio1Action);
   radio.startReceive();
 
   xSemaphoreGive(radioMutex);

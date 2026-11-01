@@ -1,3 +1,29 @@
+// TODO!!!! 16 channel relay so the opposing relay for each output will be used
+// as an input, this way I can update the state of the vehicle based on these
+// input states
+
+//  I.E when I am manually starting the vehicle but still want the
+//  glowPlugSequence to operate without going through the whole ignSequence as
+//  this will replace the glowplug controller and use the coolant temp sensor to
+//  determine toggle time. I should also check the resistance values on each of
+//  the plugs to prevent quick cycling with the same toggle time, like on cold
+//  days where crank might just need to be re-run but glowplugs are still hot.
+// This means I will need to build an 8 way voltage div. I am wondering if I can
+// build one volt div and switch between plugs with transistors or something....
+// Either way going to need another gpio expander, might as well get two more
+// for future telemetry.
+
+//  Also add a time limit on the running duration while the key is not present.
+//  This means instead of a running check like I will need for the ign/glowplugs
+//  I will use the key position to determine that state. This will be the same
+//  indicator for the "manual" glowPlugSequence, the relay should turn off if
+//  the actual physical switch is used. Still want a fall back for completely
+//  cutting power to the relay channels so I will need a dedicated powersupply
+//  that I can operate with the pi and esp32.
+
+// add timining advance and fuel pump toggle, this is completely not needed for
+// normal operation but will help in maintenance and diagnostics I could also
+// fix the blower motor flap with a stepper motor...
 #include "relay.h"
 #include "driver/gpio.h"
 #include "events.h"
@@ -104,10 +130,19 @@ esp_err_t allOffSequence() {
   esp_err_t err = ESP_FAIL;
   for (uint8_t pin : relayPins) {
     err = mcp23x17_set_level(&mcp, pin, 1);
+    if (err != ESP_OK) {
+      printf("Pin: %d toggle failed: %s\n", pin, esp_err_to_name(err));
+    }
   }
   if (err != ESP_OK) {
     return err;
   }
+  vehicleState.acc = false;
+  vehicleState.glowPlugs = false;
+  vehicleState.ign = OFF;
+  vehicleState.headlights = false;
+  vehicleState.runningLights = false;
+  vehicleState.heater = false;
   return ESP_OK;
 }
 
@@ -204,6 +239,7 @@ esp_err_t ignSequence() {
     printf("IGN first toggle failed: %s\n", esp_err_to_name(err));
     return err;
   }
+  vehicleState.ign = START;
 
   vTaskDelay(pdMS_TO_TICKS(2000));
 
@@ -212,6 +248,7 @@ esp_err_t ignSequence() {
     printf("IGN second toggle failed: %s\n", esp_err_to_name(err));
     return err;
   }
+  vehicleState.ign = ON;
   return ESP_OK;
 }
 

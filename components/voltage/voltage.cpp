@@ -49,13 +49,15 @@ static void initVoltageMonitor() {
 
   cali_handle = NULL;
 
-  adc_cali_line_fitting_config_t cali_config = {.unit_id = ADC_UNIT,
-                                                .atten = ADC_ATTEN,
-                                                .bitwidth = ADC_BITWIDTH_12,
-                                                .default_vref = 1100};
+  adc_cali_curve_fitting_config_t cali_config = {
+      .unit_id = ADC_UNIT,
+      .chan = ADC_CHANNEL,
+      .atten = ADC_ATTEN,
+      .bitwidth = ADC_BITWIDTH_12,
+  };
 
   ESP_ERROR_CHECK(
-      adc_cali_create_scheme_line_fitting(&cali_config, &cali_handle));
+      adc_cali_create_scheme_curve_fitting(&cali_config, &cali_handle));
 }
 void voltageMonitorTask(void *arg) {
   initVoltageMonitor();

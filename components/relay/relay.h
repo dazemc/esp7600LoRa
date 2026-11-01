@@ -31,7 +31,7 @@ PIN | RELAY
 
 #define I2C_PORT I2C_NUM_1
 #define I2C_SDA GPIO_NUM_33
-#define I2C_SCL GPIO_NUM_22
+#define I2C_SCL GPIO_NUM_42
 #define MCP_ADDR 0x20
 
 inline constexpr uint8_t relayPins[] = {
