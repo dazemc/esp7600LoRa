@@ -23,9 +23,9 @@ static constexpr int ADC_SAMPLE_COUNT = 32;
 // 57.6°F → 386.0 Ω
 // 126.0°F → 99.5 Ω
 // 195.0°F → 27.7 Ω
-static constexpr float STEINHART_A = 2.0619052364e-03f;
-static constexpr float STEINHART_B = 1.9299107154e-04f;
-static constexpr float STEINHART_C = 1.2708124825e-06f;
+static constexpr float STEINHART_A = 2.1854771452e-03f;
+static constexpr float STEINHART_B = 1.4835849337e-04f;
+static constexpr float STEINHART_C = 1.9441476833e-06f;
 
 static adc_oneshot_unit_handle_t adc_handle;
 static adc_oneshot_unit_init_cfg_t init_config{};
