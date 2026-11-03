@@ -53,7 +53,7 @@ static esp_err_t statusHandler(httpd_req_t *req) {
 }
 
 static esp_err_t wifiPostHandler(httpd_req_t *req) {
-  if (req->content_len <= 0 || req->content_len > 512) {
+  if (req->content_len == 0 || req->content_len > 512) {
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "bad length");
     return ESP_FAIL;
   }
@@ -62,13 +62,17 @@ static esp_err_t wifiPostHandler(httpd_req_t *req) {
     httpd_resp_send_500(req);
     return ESP_FAIL;
   }
-  int read = httpd_req_recv(req, buf, req->content_len);
-  if (read <= 0) {
-    free(buf);
-    httpd_resp_send_500(req);
-    return ESP_FAIL;
+  size_t total = 0;
+  while (total < req->content_len) {
+    int read = httpd_req_recv(req, buf + total, req->content_len - total);
+    if (read <= 0) {
+      free(buf);
+      httpd_resp_send_500(req);
+      return ESP_FAIL;
+    }
+    total += static_cast<size_t>(read);
   }
-  buf[read] = '\0';
+  buf[total] = '\0';
 
   char ssid[33] = "";
   char pass[65] = "";
@@ -87,21 +91,31 @@ static esp_err_t wifiPostHandler(httpd_req_t *req) {
     strncpy(pass, jPass->valuestring, sizeof(pass) - 1);
   }
   cJSON_Delete(root);
-  if (ssid[0] == '\0' || strlen(pass) < 8) {
+  const size_t passLen = strlen(pass);
+  if (ssid[0] == '\0' || passLen < 8 || passLen > 63) {
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST,
-                        "need ssid and pass >= 8 chars");
+                        "need ssid and pass 8-63 chars");
     return ESP_FAIL;
   }
 
   nvs_handle_t h;
-  if (nvs_open("esp7600", NVS_READWRITE, &h) != ESP_OK ||
-      nvs_set_str(h, "sta_ssid", ssid) != ESP_OK ||
-      nvs_set_str(h, "sta_pass", pass) != ESP_OK || nvs_commit(h) != ESP_OK) {
-    nvs_close(h);
+  esp_err_t err = nvs_open("esp7600", NVS_READWRITE, &h);
+  if (err != ESP_OK) {
     httpd_resp_send_500(req);
     return ESP_FAIL;
   }
+  err = nvs_set_str(h, "sta_ssid", ssid);
+  if (err == ESP_OK) {
+    err = nvs_set_str(h, "sta_pass", pass);
+  }
+  if (err == ESP_OK) {
+    err = nvs_commit(h);
+  }
   nvs_close(h);
+  if (err != ESP_OK) {
+    httpd_resp_send_500(req);
+    return ESP_FAIL;
+  }
 
   ESP_LOGI(TAG, "provisioned, restarting to join %s", ssid);
   httpd_resp_sendstr(req, "{\"ok\":true,\"restarting\":true}");
