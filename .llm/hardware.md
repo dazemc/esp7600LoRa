@@ -6,7 +6,7 @@ pin, or relay code.
 ## Boards and apps
 
 - Both apps target ESP32-S3 (`CONFIG_IDF_TARGET="esp32s3"`) with separate
-  `sdkconfig` files and a 1 MB factory app partition. The console is UART0
+  `sdkconfig` files and a 7.9 MB factory app partition. The console is UART0
   (GPIO43/44) over the board's USB-UART bridge; the native USB port is not
   the console.
 - `send/` (vehicle, `isVehicle = true`): telemetry → `loraTXQueue` → LoRa TX.
@@ -34,6 +34,21 @@ GPIO19/20 are the S3 native USB D-/D+ pins and
 them is bench-verified; keep the native USB port unplugged while UART1 is in
 use. GPIO17/18 are the UART1 defaults and are claimed by the OLED, which is
 why the Pi link sits on 19/20.
+
+## Flash and partitions
+
+Both boards carry an 8 MB flash (`esptool flash_id` reports manufacturer
+0xc8, device 0x4017); the old config declared 2 MB. `CONFIG_ESPTOOLPY_FLASHSIZE`
+is now 8 MB and both apps use the same `partitions.csv`:
+
+| Name | Type | Offset | Size |
+| --- | --- | --- | --- |
+| nvs | data/nvs | 0x9000 | 24 KiB |
+| phy_init | data/phy | 0xf000 | 4 KiB |
+| factory | app | 0x10000 | 0x7F0000 (7.9 MB) |
+
+NVS and PHY offsets are unchanged, so stored Wi-Fi credentials survive the
+resize. The app slot is single-slot; there is no OTA partition.
 
 ## ADC
 
