@@ -27,7 +27,7 @@ static const QueueConfig relayQueueConf{
     .handle = &relayQueue, .length = 10, .itemSize = sizeof(EventToggle)};
 
 static const EventConfig events[]{
-    {.taskConfig = {recvLoRaTask, "LoRa RX", 2048, NULL, 3, NULL},
+    {.taskConfig = {recvLoRaTask, "LoRa RX", 4096, NULL, 3, NULL},
      .queueConfig = &recvLoRaRXQueueConf},
     {.taskConfig = {sendLoRaTask, "LoRa TX", 4096, NULL, 3, NULL},
      .queueConfig = &sendLoRaTXQueueConf},

@@ -25,6 +25,7 @@ static SX1262 radio = new Module(hal, LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY);
 static uint8_t packetIdTX = 0;
 static uint8_t lastPacketIdRX;
 static bool havePacketRX = false;
+static uint32_t droppedPackets = 0;
 
 static const char *TAG = "lora";
 
@@ -171,9 +172,12 @@ void checkPacketId(uint8_t packetId) {
   if (havePacketRX) {
     uint8_t expected = (lastPacketIdRX + 1) & 0x07;
     if (packetId != expected) {
-      printf("\033[1;33mWARNING: dropped packet(s) expected %d but got "
-             "%d\033[0m\n",
-             expected, packetId);
+      uint8_t gap = (packetId - expected) & 0x07;
+      droppedPackets += gap;
+      printf("\033[1;33mWARNING: dropped %u packet(s), expected %d but got "
+             "%d (total %u)\033[0m\n",
+             static_cast<unsigned>(gap), expected, packetId,
+             static_cast<unsigned>(droppedPackets));
     }
     lastPacketIdRX = packetId;
   } else {
@@ -210,14 +214,23 @@ void recvLoRaTask(void *arg) {
 
           checkPacketId(packet.packetId);
 
+          LoRaRawPacket raw{};
+          raw.length = static_cast<int>(len);
+          raw.rssi = static_cast<int>(radio.getRSSI());
+          raw.snr = radio.getSNR();
+
           displayEvent.type = EVENT_DISPLAY_LORA_RX;
           LoRaPacket unpackedPacket = unpackPacket(packet);
           unpackedPacket.vehicle.voltageData.battery =
               u8ToVoltage(unpackedPacket.vehicle.voltageData.encodedVoltage);
           displayEvent.loraRX.loraPacket = unpackedPacket;
+          displayEvent.loraRX.loraRawPacket = raw;
+          displayEvent.loraRX.droppedPackets = droppedPackets;
 
           serialEvent.type = EVENT_SERIAL_LORA_RX;
           serialEvent.loraRX.loraPacket = unpackedPacket;
+          serialEvent.loraRX.loraRawPacket = raw;
+          serialEvent.loraRX.droppedPackets = droppedPackets;
 
           if (xQueueSend(serialQueue, &serialEvent, 0) != pdTRUE) {
             countDroppedUiEvent();

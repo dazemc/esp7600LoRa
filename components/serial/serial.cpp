@@ -23,6 +23,13 @@ const char *ignitionToString(Ignition ign) {
   }
 }
 
+static const char *jsonBool(bool value) { return value ? "true" : "false"; }
+
+static void writeUartLine(const char *line) {
+  uart_write_bytes(UART_PORT, line, strlen(line));
+  uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
+}
+
 static void initSerial() {
   uart_config_t uart_config = {};
   uart_config.baud_rate = BAUD;
@@ -122,26 +129,32 @@ void serialTask(void *arg) {
         }
         break;
       }
-      case EVENT_SERIAL_LORA_RX:
+      case EVENT_SERIAL_LORA_RX: {
+        const EventLoRaRX &rx = event.loraRX;
+        const LoRaPacket &p = rx.loraPacket;
+        char json[320];
+        int len = snprintf(
+            json, sizeof(json),
+            "{\"t\":\"rx\",\"id\":%u,\"veh\":%s,\"ign\":\"%s\",\"head\":%s,"
+            "\"acc\":%s,\"run\":%s,\"heat\":%s,\"glow\":%s,\"wifi\":%s,"
+            "\"v\":%.2f,\"c\":%d,\"rssi\":%d,\"snr\":%.1f,\"drop\":%u}\n",
+            static_cast<unsigned>(p.header.packetId), jsonBool(p.isVehicle),
+            ignitionToString(p.vehicle.ign), jsonBool(p.vehicle.headlights),
+            jsonBool(p.vehicle.acc), jsonBool(p.vehicle.runningLights),
+            jsonBool(p.vehicle.heater), jsonBool(p.vehicle.glowPlugs),
+            jsonBool(p.isWifi),
+            static_cast<double>(p.vehicle.voltageData.battery),
+            static_cast<int>(p.vehicle.coolantTemp), rx.loraRawPacket.rssi,
+            static_cast<double>(rx.loraRawPacket.snr),
+            static_cast<unsigned>(rx.droppedPackets));
+        if (len > 0 && len < static_cast<int>(sizeof(json))) {
+          writeUartLine(json);
+        }
         if (DEBUG) {
-          printf("RX recv: ");
-          printf("PacketId: %d\n", event.loraRX.loraPacket.header.packetId);
-          printf("Voltage: %f\n",
-                 event.loraRX.loraPacket.vehicle.voltageData.battery);
-          printf("ACC: %d\n", event.loraRX.loraPacket.vehicle.acc);
-          printf("IGN: ");
-          printf("%s\n", ignitionToString(event.loraRX.loraPacket.vehicle.ign));
-          printf("HEADLIGHTS: %d\n",
-                 event.loraRX.loraPacket.vehicle.headlights);
-          printf("RUNNING_LIGHTS: %d\n",
-                 event.loraRX.loraPacket.vehicle.runningLights);
-          printf("GLOWPLUGS: %d\n", event.loraRX.loraPacket.vehicle.glowPlugs);
-          printf("HEATER: %d\n", event.loraRX.loraPacket.vehicle.heater);
-          printf("COOLANT: %d F\n",
-                 static_cast<int>(event.loraRX.loraPacket.vehicle.coolantTemp));
-          printf("\n");
+          printf("%s", json);
         }
         break;
+      }
       case EVENT_SERIAL_LORA_WIFI:
       case EVENT_SERIAL_LORA_TOGGLE:
         break;
@@ -200,48 +213,33 @@ void serialTask(void *arg) {
           }
           queueRelayCommand(EVENT_TOGGLE_ALL_OFF);
         } else if (!strcmp("TEST", msg)) {
-
-          printf("TEST message received\n");
-
-          constexpr char response[] = "HEARD FROM ESP32\n";
-
-          int written =
-              uart_write_bytes(UART_PORT, response, sizeof(response) - 1);
-
-          printf("UART response queued: %d bytes\n", written);
-
-          uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
-        } else if (!strcmp("STATE", msg)) {
-
-          char response[256];
-
-          int len =
-              snprintf(response, sizeof(response),
-                       "Aux Battery: %.2f\n"
-                       "IGN: %s\n"
-                       "Headlights: %s\n"
-                       "ACC: %s\n"
-                       "Running Lights: %s\n"
-                       "Heater: %s\n"
-                       "Glow Plugs: %s\n"
-                       "Coolant Temp: %d\n",
-                       static_cast<double>(vehicleState.voltageData.battery),
-                       ignitionToString(vehicleState.ign),
-                       vehicleState.headlights ? "ON" : "OFF",
-                       vehicleState.acc ? "ON" : "OFF",
-                       vehicleState.runningLights ? "ON" : "OFF",
-                       vehicleState.heater ? "ON" : "OFF",
-                       vehicleState.glowPlugs ? "ON" : "OFF",
-                       static_cast<int>(vehicleState.coolantTemp));
-
-          if (len > 0 && len < sizeof(response)) {
-            uart_write_bytes(UART_PORT, response, len);
-            uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
+          constexpr char response[] = "{\"t\":\"pong\"}\n";
+          writeUartLine(response);
+          if (DEBUG) {
+            printf("%s", response);
           }
+        } else if (!strcmp("STATE", msg)) {
+          char response[256];
+          int len = snprintf(
+              response, sizeof(response),
+              "{\"t\":\"state\",\"v\":%.2f,\"ign\":\"%s\",\"head\":%s,"
+              "\"acc\":%s,\"run\":%s,\"heat\":%s,\"glow\":%s,\"c\":%d}\n",
+              static_cast<double>(vehicleState.voltageData.battery),
+              ignitionToString(vehicleState.ign),
+              jsonBool(vehicleState.headlights), jsonBool(vehicleState.acc),
+              jsonBool(vehicleState.runningLights),
+              jsonBool(vehicleState.heater), jsonBool(vehicleState.glowPlugs),
+              static_cast<int>(vehicleState.coolantTemp));
 
-        }
-
-        else {
+          if (len > 0 && len < static_cast<int>(sizeof(response))) {
+            writeUartLine(response);
+            if (DEBUG) {
+              printf("%s", response);
+            }
+          }
+        } else {
+          // Never answer unknown input on UART1: TX can echo into RX and a
+          // reply would feed itself.
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Unparsed serial message received: "
                    "%s\033[0m\n",

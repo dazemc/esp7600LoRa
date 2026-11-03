@@ -117,6 +117,12 @@ void displayTask(void *arg) {
         offset += snprintf(
             message + offset, sizeof(message) - offset, "COOLANT: %d F\n",
             static_cast<int>(event.loraRX.loraPacket.vehicle.coolantTemp));
+        offset += snprintf(message + offset, sizeof(message) - offset,
+                           "RSSI: %d dBm\n",
+                           event.loraRX.loraRawPacket.rssi);
+        offset += snprintf(message + offset, sizeof(message) - offset,
+                           "SNR: %.1f dB\n",
+                           static_cast<double>(event.loraRX.loraRawPacket.snr));
         ssd1306_clear(displayHandle);
         ssd1306_draw_text(displayHandle, oledX, oledY, message, true);
         ssd1306_display(displayHandle);

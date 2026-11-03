@@ -21,7 +21,7 @@ static const QueueConfig serialQueueConf{
     .handle = &serialQueue, .length = 10, .itemSize = sizeof(EventSerial)};
 
 static const EventConfig events[]{
-    {.taskConfig = {recvLoRaTask, "LoRa RX", 3096, NULL, 3, NULL},
+    {.taskConfig = {recvLoRaTask, "LoRa RX", 4096, NULL, 3, NULL},
      .queueConfig = &recvLoRaQueueConf},
     {.taskConfig = {sendLoRaTask, "LoRa TX", 2048, NULL, 3, NULL},
      .queueConfig = &sendLoRaQueueConf},

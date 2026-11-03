@@ -80,6 +80,7 @@ LoRaPacket unpackPacket(LoRaCompactPacket packet) {
 
   unpacked.header.packetId = packet.packetId;
   unpacked.isVehicle = packet.isVehicle;
+  unpacked.isWifi = packet.isWifiEnabled;
 
   unpacked.vehicle.ign = unpackIgnition(packet.ign);
   unpacked.vehicle.headlights = packet.headlights;
