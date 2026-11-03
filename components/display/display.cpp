@@ -123,9 +123,6 @@ void displayTask(void *arg) {
         break;
       }
 
-      case EVENT_DISPLAY_LORA_WIFI:
-      case EVENT_DISPLAY_LORA_TOGGLE:
-        break;
       }
     }
     if (DEBUG) {

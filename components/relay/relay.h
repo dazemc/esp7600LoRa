@@ -40,16 +40,12 @@ inline constexpr uint8_t relayPins[] = {
 
 void relayTask(void *arg);
 esp_err_t initRelay();
-void relayCycleTest();
 esp_err_t relayState(uint8_t pin, bool *state);
-esp_err_t relayPinState(uint8_t pin, bool *newState);
 esp_err_t glowPlugSequence();
 esp_err_t heaterSequence();
 esp_err_t accSequence();
 esp_err_t ignSequence();
 esp_err_t runningLightsSequence();
 esp_err_t headLightsSequence();
-void testMcp23017Pins();
-void testAssignedPins();
 
 extern QueueHandle_t relayQueue;

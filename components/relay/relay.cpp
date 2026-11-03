@@ -73,36 +73,6 @@ esp_err_t initRelay() {
   return ESP_OK;
 }
 
-void testMcp23017Pins() {
-  while (1) {
-    for (uint8_t pin = 0; pin < 16; ++pin) {
-      printf("GPIO %u ON\n", pin);
-
-      ESP_ERROR_CHECK(mcp23x17_set_level(&mcp, pin, 0));
-      vTaskDelay(pdMS_TO_TICKS(1000));
-
-      ESP_ERROR_CHECK(mcp23x17_set_level(&mcp, pin, 1));
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-  }
-}
-
-void testAssignedPins() {
-  while (1) {
-    for (uint8_t pin : relayPins) {
-      mcp23x17_set_level(&mcp, pin, 0);
-      printf("setting pins low\n");
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    for (uint8_t pin : relayPins) {
-      mcp23x17_set_level(&mcp, pin, 1);
-      printf("setting pins high\n");
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-  }
-}
-
 esp_err_t togglePinState(uint8_t pin, bool *newState) {
   bool currentState;
   esp_err_t err = relayState(pin, &currentState);

@@ -61,7 +61,4 @@ extern "C" void app_main() {
   initRelay();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));
-  //
-  // testMcp23017Pins();
-  // testAssignedPins();
 }

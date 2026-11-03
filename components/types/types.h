@@ -108,10 +108,4 @@ static_assert(sizeof(LoRaCompactPacket) == 5,
 static_assert(offsetof(LoRaCompactPacket, encodedVoltage) == 2,
               "LoRaCompactPacket gained padding before byte 2");
 
-struct Telemetry {
-  union {
-    LoRaRawPacket loraRawPacket;
-    VehicleState vehicle;
-    LoRaPacket loraPacket;
-  };
-};
+

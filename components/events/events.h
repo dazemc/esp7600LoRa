@@ -2,10 +2,6 @@
 
 #include "types.h"
 
-enum EventWiFiType {
-  EVENT_WIFI,
-};
-
 enum EventToggleType {
   EVENT_TOGGLE_HEADLIGHTS,
   EVENT_TOGGLE_ACC,
@@ -18,26 +14,16 @@ enum EventToggleType {
 
 enum EventLoRaTXType {
   EVENT_LORA_TX,
-  EVENT_LORA_SEND,
-};
-
-enum EventLoRaRXType {
-  EVENT_LORA_RX,
-  EVENT_LORA_RECV,
 };
 
 enum EventDisplayType {
   EVENT_DISPLAY_LORA_RX,
   EVENT_DISPLAY_LORA_TX,
-  EVENT_DISPLAY_LORA_TOGGLE,
-  EVENT_DISPLAY_LORA_WIFI,
 };
 
 enum EventSerialType {
   EVENT_SERIAL_LORA_RX,
   EVENT_SERIAL_LORA_TX,
-  EVENT_SERIAL_LORA_TOGGLE,
-  EVENT_SERIAL_LORA_WIFI,
   EVENT_SERIAL_DEBUG,
   EVENT_SERIAL_IN,
   EVENT_SERIAL_OUT,
@@ -54,12 +40,10 @@ struct EventToggle {
 
 struct EventLoRaTX {
   EventLoRaTXType type;
-  bool isVehicle;
   LoRaPacket loraPacket;
 };
 
 struct EventLoRaRX {
-  EventLoRaRXType type;
   LoRaRawPacket loraRawPacket;
   LoRaPacket loraPacket;
   uint32_t droppedPackets;
@@ -70,7 +54,6 @@ struct EventDisplay {
   union {
     EventLoRaTX loraTX;
     EventLoRaRX loraRX;
-    EventToggle toggle;
   };
 };
 
@@ -87,7 +70,6 @@ struct EventSerial {
   union {
     EventLoRaTX loraTX;
     EventLoRaRX loraRX;
-    EventToggle toggle;
     EventDebug debug;
     EventSerialIn serialIn;
     EventSerialOut serialOut;

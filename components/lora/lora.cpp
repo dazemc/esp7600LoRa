@@ -150,9 +150,6 @@ void sendLoRaTask(void *arg) {
       }
 
       switch (event.type) {
-      case EVENT_LORA_SEND:
-        break;
-
       case EVENT_LORA_TX: {
         if (isVehicle) {
           buildPacket(event);

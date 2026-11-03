@@ -155,9 +155,6 @@ void serialTask(void *arg) {
         }
         break;
       }
-      case EVENT_SERIAL_LORA_WIFI:
-      case EVENT_SERIAL_LORA_TOGGLE:
-        break;
       case EVENT_SERIAL_DEBUG: {
         if (DEBUG) {
           UBaseType_t remaining = uxTaskGetStackHighWaterMark(NULL);
