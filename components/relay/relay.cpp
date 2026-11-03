@@ -229,9 +229,14 @@ esp_err_t heaterSequence() {
 esp_err_t ignSequence() {
   bool ignState;
   esp_err_t err = accSequence();
-  runningLightsSequence();
   if (err != ESP_OK) {
     return err;
+  }
+
+  // Running lights are not a start prerequisite; report and continue.
+  err = runningLightsSequence();
+  if (err != ESP_OK) {
+    printf("RUNNING_LIGHTS failed: %s\n", esp_err_to_name(err));
   }
   switch (vehicleState.ign) {
   case OFF:
@@ -247,7 +252,13 @@ esp_err_t ignSequence() {
   if (vehicleState.ign == ON) {
     return ESP_FAIL;
   }
-  glowPlugSequence();
+
+  err = glowPlugSequence();
+  if (err != ESP_OK) {
+    printf("GLOW_PLUGS failed; aborting start: %s\n", esp_err_to_name(err));
+    return err;
+  }
+
   err = togglePinState(IGN, &ignState);
   if (err != ESP_OK) {
     printf("IGN first toggle failed: %s\n", esp_err_to_name(err));
