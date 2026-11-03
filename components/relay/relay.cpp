@@ -35,6 +35,7 @@
 
 QueueHandle_t relayQueue = nullptr;
 static mcp23x17_t mcp;
+static bool relayReady = false;
 
 esp_err_t initRelay() {
   ESP_ERROR_CHECK(i2cdev_init());
@@ -64,6 +65,7 @@ esp_err_t initRelay() {
     }
   }
 
+  relayReady = true;
   printf("MCP23017 initialized; all relays OFF.\n");
   return ESP_OK;
 }
@@ -301,8 +303,8 @@ void relayTask(void *arg) {
   // Receive relay events from LoRa or Serial via the Raspberry Pi/modem,
   // then notify telemetry when a relay state changes.
 
-  if (initRelay() != ESP_OK) {
-    printf("Relay initialization failed.\n");
+  if (!relayReady) {
+    printf("Relay not initialized; task idle\n");
     vTaskDelete(nullptr);
     return;
   }
