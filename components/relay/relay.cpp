@@ -31,6 +31,7 @@
 #include "types.h"
 #include "telemetry.h"
 #include "mcp23x17.h"
+#include <algorithm>
 
 QueueHandle_t relayQueue = nullptr;
 static mcp23x17_t mcp;
@@ -146,6 +147,14 @@ esp_err_t allOffSequence() {
   return ESP_OK;
 }
 
+// One °F step per 20 °F below 220 °F; a warm engine gets one second.
+static int glowPlugSeconds(int16_t coolantF) {
+  if (coolantF > 140) {
+    return 1;
+  }
+  return std::clamp((220 - coolantF) / 20, 1, 12);
+}
+
 esp_err_t glowPlugSequence() {
   esp_err_t err = relayState(GLOW_PLUGS, &vehicleState.glowPlugs);
   if (err != ESP_OK) {
@@ -159,13 +168,18 @@ esp_err_t glowPlugSequence() {
       return err;
     }
   }
+
+  const int toggleTime = glowPlugSeconds(vehicleState.coolantTemp);
+
   err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
 
   if (err != ESP_OK) {
     printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
     return err;
   }
-  vTaskDelay(pdMS_TO_TICKS(4000));
+
+  vTaskDelay(pdMS_TO_TICKS(toggleTime * 1000));
+
   err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
   if (err != ESP_OK) {
     printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
@@ -241,6 +255,7 @@ esp_err_t ignSequence() {
   }
   vehicleState.ign = START;
 
+  // need to check alternator and/or rpm
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   err = togglePinState(IGN, &ignState);
