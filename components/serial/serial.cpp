@@ -213,48 +213,33 @@ void serialTask(void *arg) {
           }
           queueRelayCommand(EVENT_TOGGLE_ALL_OFF);
         } else if (!strcmp("TEST", msg)) {
-
-          printf("TEST message received\n");
-
-          constexpr char response[] = "HEARD FROM ESP32\n";
-
-          int written =
-              uart_write_bytes(UART_PORT, response, sizeof(response) - 1);
-
-          printf("UART response queued: %d bytes\n", written);
-
-          uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
-        } else if (!strcmp("STATE", msg)) {
-
-          char response[256];
-
-          int len =
-              snprintf(response, sizeof(response),
-                       "Aux Battery: %.2f\n"
-                       "IGN: %s\n"
-                       "Headlights: %s\n"
-                       "ACC: %s\n"
-                       "Running Lights: %s\n"
-                       "Heater: %s\n"
-                       "Glow Plugs: %s\n"
-                       "Coolant Temp: %d\n",
-                       static_cast<double>(vehicleState.voltageData.battery),
-                       ignitionToString(vehicleState.ign),
-                       vehicleState.headlights ? "ON" : "OFF",
-                       vehicleState.acc ? "ON" : "OFF",
-                       vehicleState.runningLights ? "ON" : "OFF",
-                       vehicleState.heater ? "ON" : "OFF",
-                       vehicleState.glowPlugs ? "ON" : "OFF",
-                       static_cast<int>(vehicleState.coolantTemp));
-
-          if (len > 0 && len < sizeof(response)) {
-            uart_write_bytes(UART_PORT, response, len);
-            uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
+          constexpr char response[] = "{\"t\":\"pong\"}\n";
+          writeUartLine(response);
+          if (DEBUG) {
+            printf("%s", response);
           }
+        } else if (!strcmp("STATE", msg)) {
+          char response[256];
+          int len = snprintf(
+              response, sizeof(response),
+              "{\"t\":\"state\",\"v\":%.2f,\"ign\":\"%s\",\"head\":%s,"
+              "\"acc\":%s,\"run\":%s,\"heat\":%s,\"glow\":%s,\"c\":%d}\n",
+              static_cast<double>(vehicleState.voltageData.battery),
+              ignitionToString(vehicleState.ign),
+              jsonBool(vehicleState.headlights), jsonBool(vehicleState.acc),
+              jsonBool(vehicleState.runningLights),
+              jsonBool(vehicleState.heater), jsonBool(vehicleState.glowPlugs),
+              static_cast<int>(vehicleState.coolantTemp));
 
-        }
-
-        else {
+          if (len > 0 && len < static_cast<int>(sizeof(response))) {
+            writeUartLine(response);
+            if (DEBUG) {
+              printf("%s", response);
+            }
+          }
+        } else {
+          // Never answer unknown input on UART1: TX can echo into RX and a
+          // reply would feed itself.
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Unparsed serial message received: "
                    "%s\033[0m\n",
