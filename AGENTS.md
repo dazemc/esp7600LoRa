@@ -14,8 +14,9 @@ Both sides run the same `event_bus` model: static `EventConfig` tables
 
 ## Goal
 
-Reliable low-byte-count telemetry link (currently 3-byte packets, 4 bits
-reserved) with a display + serial base and a cellular backhaul to come.
+Reliable low-byte-count telemetry link (currently 5-byte packets: 10-bit
+signed coolant °F, 6 spare bits) with a display + serial base and a cellular
+backhaul to come.
 Prefer small packet + queue changes over rewrites; keep send/recv sharing
 `components/` rather than forking per-side drivers.
 
@@ -48,13 +49,17 @@ remove them. Do not let the queue rot.
 
 ## What it is
 
-- Two ESP-IDF apps (`send`, `recv`) sharing `components/` via
-  `EXTRA_COMPONENT_DIRS ../components/`.
+- Two ESP-IDF apps (`send`, `recv`) targeting ESP32-S3 and sharing
+  `components/` via `EXTRA_COMPONENT_DIRS ../components/`.
 - Event-bus architecture: `event_bus`, `events`, `types` components define
   tasks + queues; peripherals (`lora`, `display`, `serial`, `telemetry`,
-  `voltage`, `wifi_sta`, `relay`, `utils`) implement task fns.
-- RadioLib-based LoRa link (`components/radiolib`), 3-byte telemetry
-  packets with 4 reserved bits.
+  `voltage`, `coolant_sensor`, `relay`, `wifi_sta`, `utils`) implement task
+  fns, and `adc_shared` owns the one ADC unit.
+- RadioLib-based LoRa link (`components/radiolib`), 5-byte telemetry
+  packets: 3-bit ID, 4 reserved flag bits, 7 state bits, encoded voltage,
+  10-bit signed coolant °F, 6 spare bits.
+- Relay outputs through an MCP23017 on I2C1, OLED on I2C0, Pi/serial link
+  on UART1. The pin table lives in `.llm/hardware.md`.
 - Base-side Wi-Fi STA uplink (`wifi_sta`) for getting received telemetry
   off the board.
 
@@ -67,6 +72,9 @@ remove them. Do not let the queue rot.
   in both.
 - Not a place for live credentials. Wi-Fi SSID/PSK stay out of the tree
   (see Privacy).
+- Not a place for one-sided protocol edits. A packet-format change lands on
+  `send` and `recv` in one step, both builds proven, or the link breaks
+  silently.
 
 ## Instruction precedence
 
