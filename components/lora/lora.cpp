@@ -27,6 +27,8 @@ static uint8_t packetIdTX = 0;
 static uint8_t lastPacketIdRX;
 static bool havePacketRX = false;
 static uint32_t droppedPackets = 0;
+// Set by the TX path so the RX metric can excuse one half-duplex collision.
+static volatile bool transmittedSinceLastRx = false;
 
 static const char *TAG = "lora";
 
@@ -115,6 +117,8 @@ void sendPacketDuplex(const LoRaPacket &packet) {
   int state = radio.transmit((uint8_t *)&compactPacket, sizeof(compactPacket));
   if (state != RADIOLIB_ERR_NONE) {
     ESP_LOGE(TAG, "transmit failed, code %d", state);
+  } else {
+    transmittedSinceLastRx = true;
   }
 
   radio.setDio1Action(onDio1Action);
@@ -188,21 +192,45 @@ void sendLoRaTask(void *arg) {
 }
 
 void checkPacketId(uint8_t packetId) {
-  if (havePacketRX) {
-    uint8_t expected = (lastPacketIdRX + 1) & 0x07;
-    if (packetId != expected) {
-      uint8_t gap = (packetId - expected) & 0x07;
-      droppedPackets += gap;
-      printf("\033[1;33mWARNING: dropped %u packet(s), expected %d but got "
-             "%d (total %u)\033[0m\n",
-             static_cast<unsigned>(gap), expected, packetId,
-             static_cast<unsigned>(droppedPackets));
-    }
-    lastPacketIdRX = packetId;
-  } else {
+  if (!havePacketRX) {
     havePacketRX = true;
     lastPacketIdRX = packetId;
+    transmittedSinceLastRx = false;
+    return;
   }
+
+  if (packetId == lastPacketIdRX) {
+    // Duplicate delivery, not a loss.
+    return;
+  }
+
+  uint8_t expected = (lastPacketIdRX + 1) & 0x07;
+  uint8_t gap = (packetId - expected) & 0x07;
+
+  if (gap > 4) {
+    // Old or reordered frame in a 3-bit sequence; resync without counting a
+    // phantom loss.
+    lastPacketIdRX = packetId;
+    transmittedSinceLastRx = false;
+    return;
+  }
+
+  uint8_t counted = gap;
+  if (counted > 0 && transmittedSinceLastRx) {
+    // Half-duplex: one frame can land while we are transmitting.
+    counted--;
+  }
+
+  if (counted > 0) {
+    droppedPackets += counted;
+    printf("\033[1;33mWARNING: missed %u packet(s), expected %d but got "
+           "%d (total %u)\033[0m\n",
+           static_cast<unsigned>(counted), expected, packetId,
+           static_cast<unsigned>(droppedPackets));
+  }
+
+  lastPacketIdRX = packetId;
+  transmittedSinceLastRx = false;
 }
 
 void recvLoRaTask(void *arg) {
