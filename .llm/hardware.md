@@ -116,9 +116,12 @@ stack needs a runtime-proven step, not just a clean build.
 ## Serial link (decision 2026-11-03)
 
 The Pi Zero W 2 talks to the ESP32 on UART1 (TX 19, RX 20) at 115200,
-leaving the UART0 console free for `idf.py monitor`. Commands are
-newline-terminated ASCII: `START`, `ACC`, `HEADLIGHTS`, `RUNNINGLIGHTS`,
-`HEATER`, `GLOWPLUGS`, `ALLOFF`, `TEST`, `STATE`.
+leaving the UART0 console free for `idf.py monitor`. On the Pi the link is
+`/dev/ttyS0`; it must not also be the serial console — mask
+`serial-getty@ttyS0` and remove `console=serial0,…` from `cmdline.txt`, or
+the JSON competes with a login prompt. Commands are newline-terminated ASCII:
+`START`, `ACC`, `HEADLIGHTS`, `RUNNINGLIGHTS`, `HEATER`, `GLOWPLUGS`,
+`ALLOFF`, `TEST`, `STATE`, and `WIFI_RESET` (base only).
 
 Everything the ESP32 sends to the Pi is one JSON object per line:
 
@@ -162,10 +165,12 @@ headless, telemetry first.
 
 ## Wi-Fi provisioning (decision 2026-09-14)
 
-The base offers a config AP when no STA credentials are stored in NVS.
-Provisioning is a JSON REST API over `esp_http_server` — no HTML pages;
-a Flutter app is the future client. `POST /api/wifi` {ssid, pass} stores
-creds in NVS and switches to STA; `GET /api/status` reports mode and link
-state. Credentials never appear in tracked files. ESP32 is 2.4 GHz-only:
+The base creates the config AP only while it is unprovisioned; once
+credentials exist it boots STA-only and the AP is gone. Provisioning is a
+JSON REST API over `esp_http_server` — no HTML pages; a Flutter app is the
+future client. `POST /api/wifi` {ssid, pass} stores creds in NVS and restarts
+into STA; `GET /api/status` reports mode and link state. `WIFI_RESET` on
+UART1 erases `sta_ssid`/`sta_pass` and restarts back into the setup AP.
+Credentials never appear in tracked files. ESP32 is 2.4 GHz-only:
 provision the 2.4 GHz SSID (`Aetheryte_2.4`, not the 5 GHz `Aetheryte` —
 verified live 2026-09-14, end-to-end join + mDNS on the home LAN).
