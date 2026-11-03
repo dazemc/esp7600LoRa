@@ -28,6 +28,15 @@ static bool havePacketRX = false;
 
 static const char *TAG = "lora";
 
+// Radio tasks never wait on the UI: a full queue loses a screen update.
+static void countDroppedUiEvent() {
+  static uint32_t dropped = 0;
+  ++dropped;
+  if ((dropped & 0x0F) == 1) {
+    ESP_LOGW(TAG, "UI queue full; %u event(s) dropped", dropped);
+  }
+}
+
 volatile bool receivedFlag = false;
 
 void onDio1Action(void) { receivedFlag = true; }
@@ -56,14 +65,18 @@ void displayLoRa(const LoRaPacket &packet) {
   EventDisplay displayEvent = {};
   displayEvent.type = EVENT_DISPLAY_LORA_TX;
   displayEvent.loraTX.loraPacket = packet;
-  xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
+  if (xQueueSend(displayQueue, &displayEvent, 0) != pdTRUE) {
+    countDroppedUiEvent();
+  }
 }
 
 void serialLoRa(const LoRaPacket &packet) {
   EventSerial serialEvent = {};
   serialEvent.type = EVENT_SERIAL_LORA_TX;
   serialEvent.loraTX.loraPacket = packet;
-  xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
+  if (xQueueSend(serialQueue, &serialEvent, 0) != pdTRUE) {
+    countDroppedUiEvent();
+  }
 }
 
 void sendPacketDuplex(const LoRaPacket &packet) {
@@ -206,8 +219,12 @@ void recvLoRaTask(void *arg) {
           serialEvent.type = EVENT_SERIAL_LORA_RX;
           serialEvent.loraRX.loraPacket = unpackedPacket;
 
-          xQueueSend(serialQueue, &serialEvent, portMAX_DELAY);
-          xQueueSend(displayQueue, &displayEvent, portMAX_DELAY);
+          if (xQueueSend(serialQueue, &serialEvent, 0) != pdTRUE) {
+            countDroppedUiEvent();
+          }
+          if (xQueueSend(displayQueue, &displayEvent, 0) != pdTRUE) {
+            countDroppedUiEvent();
+          }
         }
       } else {
         ESP_LOGE(TAG, "readData failed, code %d", state);
