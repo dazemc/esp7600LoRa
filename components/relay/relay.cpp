@@ -38,10 +38,13 @@ static mcp23x17_t mcp;
 static bool relayReady = false;
 
 esp_err_t initRelay() {
-  ESP_ERROR_CHECK(i2cdev_init());
+  esp_err_t err = i2cdev_init();
+  if (err != ESP_OK) {
+    printf("I2C init failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
 
-  esp_err_t err =
-      mcp23x17_init_desc(&mcp, MCP_ADDR, I2C_PORT, I2C_SDA, I2C_SCL);
+  err = mcp23x17_init_desc(&mcp, MCP_ADDR, I2C_PORT, I2C_SDA, I2C_SCL);
 
   if (err != ESP_OK) {
     printf("MCP descriptor init failed: %s\n", esp_err_to_name(err));
