@@ -107,7 +107,7 @@ and the table above in the same step.
 
 All queues length 10. Vehicle RX/TX item sizes follow `EventLoRaRX` /
 `EventLoRaTX`; display and serial follow `EventDisplay` / `EventSerial`.
-Task stacks (`send` / `recv`): LoRa RX 2048 / 3096, LoRa TX 4096 / 2048,
+Task stacks (`send` / `recv`): LoRa RX 4096 / 4096, LoRa TX 4096 / 2048,
 Display 3096 / 4096, Serial 4096 / 3096, Relay 2048 (send only), Voltage
 2048 (send only), Coolant 2048 (send only), Telemetry 2048 (send only).
 Priorities: radio tasks 3, everything else 2. Growing a queue or shrinking a
