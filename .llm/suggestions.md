@@ -24,3 +24,19 @@ stacks — remaining open below)
     rejoin a stale network even with no creds in firmware.** Any credential
     rotation must wipe or overwrite board NVS (we purge once via marker);
     never assume a reflash alone clears stored secrets.
+
+## 2026-11-03 S3 / coolant review
+
+1. **`ignSequence()` drops glow-plug and running-light failures.**
+   `glowPlugSequence()` and `runningLightsSequence()` return values are
+   discarded (`relay.cpp`), so a failed glow plug still cranks the engine.
+   Check both and abort the start sequence on error.
+2. **`allOffSequence()` can report success with a stuck relay.** It overwrites
+   `err` per pin and returns only the last result; keep the first failure and
+   log every pin that did not go off.
+3. **recv is near the 1 MiB app-partition ceiling.** The last build is 951 KiB
+   with roughly 7% free; the next library that lands in the base image will
+   fail to link. Decide flash size/partition before the base grows.
+4. **Pin the air frame size.** Add
+   `static_assert(sizeof(LoRaCompactPacket) == 5)` so a padding or bitfield
+   change cannot silently alter the wire format.
