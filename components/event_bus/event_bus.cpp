@@ -22,13 +22,22 @@ void initEventBus(const EventConfig *events, size_t count) {
 
   for (size_t i = 0; i < count; i++) {
     const TaskConfig taskConfig = events[i].taskConfig;
-    xTaskCreate(taskConfig.function, taskConfig.name, taskConfig.stackSize,
-                taskConfig.arg, taskConfig.priority, taskConfig.handle);
+    if (xTaskCreate(taskConfig.function, taskConfig.name,
+                    taskConfig.stackSize, taskConfig.arg, taskConfig.priority,
+                    taskConfig.handle) != pdPASS) {
+      printf("\033[1;31mERROR: Failed to create task %s\033[0m\n\n",
+             taskConfig.name);
+      abort();
+    }
   }
 }
 void initSemaphores(const SemaphoreConfig *semaphores, size_t count) {
   for (size_t i = 0; i < count; i++) {
     SemaphoreConfig semaphoreConfig = semaphores[i];
     *semaphoreConfig.handle = xSemaphoreCreateBinary();
+    if (*semaphoreConfig.handle == nullptr) {
+      printf("\033[1;31mERROR: Failed to create semaphore\033[0m\n\n");
+      abort();
+    }
   }
 }
