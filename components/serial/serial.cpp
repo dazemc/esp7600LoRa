@@ -114,21 +114,26 @@ void serialTask(void *arg) {
     if (xQueueReceive(serialQueue, &event, pdMS_TO_TICKS(10))) {
       switch (event.type) {
       case EVENT_SERIAL_LORA_TX: {
+        const EventLoRaTX &tx = event.loraTX;
+        const LoRaPacket &p = tx.loraPacket;
+        char json[320];
+        int len = snprintf(
+            json, sizeof(json),
+            "{\"t\":\"tx\",\"id\":%u,\"veh\":%s,\"ign\":\"%s\",\"head\":%s,"
+            "\"acc\":%s,\"run\":%s,\"heat\":%s,\"glow\":%s,\"wifi\":%s,"
+            "\"v\":%.2f,\"c\":%d}\n",
+            static_cast<unsigned>(p.header.packetId), jsonBool(p.isVehicle),
+            ignitionToString(p.vehicle.ign), jsonBool(p.vehicle.headlights),
+            jsonBool(p.vehicle.acc), jsonBool(p.vehicle.runningLights),
+            jsonBool(p.vehicle.heater), jsonBool(p.vehicle.glowPlugs),
+            jsonBool(p.isWifi),
+            static_cast<double>(p.vehicle.voltageData.battery),
+            static_cast<int>(p.vehicle.coolantTemp));
+        if (len > 0 && len < static_cast<int>(sizeof(json))) {
+          writeUartLine(json);
+        }
         if (DEBUG) {
-          printf("TX sent: ");
-          printf("PacketId: %d\n", event.loraTX.loraPacket.header.packetId);
-          printf("Voltage: %f\n",
-                 event.loraTX.loraPacket.vehicle.voltageData.battery);
-          printf("ACC: %d\n", event.loraTX.loraPacket.vehicle.acc);
-          printf("IGN: ");
-          printf("%s\n", ignitionToString(event.loraTX.loraPacket.vehicle.ign));
-          printf("HEADLIGHTS: %d\n",
-                 event.loraTX.loraPacket.vehicle.headlights);
-          printf("RUNNING_LIGHTS: %d\n",
-                 event.loraTX.loraPacket.vehicle.runningLights);
-          printf("GLOWPLUGS: %d\n", event.loraTX.loraPacket.vehicle.glowPlugs);
-          printf("HEATER: %d\n", event.loraTX.loraPacket.vehicle.heater);
-          printf("\n");
+          printf("%s", json);
         }
         break;
       }
