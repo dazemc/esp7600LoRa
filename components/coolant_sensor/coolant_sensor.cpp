@@ -5,15 +5,10 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
-#include "events.h"
-#include "event_bus.h"
 #include "types.h"
 #include "coolant_sensor.h"
 #include "adc_shared.h"
-#include "serial.h"
-#include <cstdio>
 #include <cstdint>
-#include <cstddef>
 #include <cmath>
 #include <algorithm>
 
@@ -101,7 +96,6 @@ void thermistorMonitorTask(void *arg) {
     const float resistance = thermistorResistance(adc_voltage);
 
     static bool faultLogged = false;
-    float temperature;
     int16_t coolantF;
     if (resistance <= 0.0f) {
       if (!faultLogged) {
@@ -109,30 +103,19 @@ void thermistorMonitorTask(void *arg) {
                  adc_voltage);
         faultLogged = true;
       }
-      temperature = static_cast<float>(COOLANT_FAULT_F);
       coolantF = COOLANT_FAULT_F;
     } else {
       if (faultLogged) {
         ESP_LOGW(TAG, "coolant sensor recovered");
         faultLogged = false;
       }
-      temperature = thermistorTemperature(resistance);
+      const float temperature = thermistorTemperature(resistance);
       // Engineering value in °F; only the wire conversion packs 10 bits.
       coolantF = static_cast<int16_t>(std::lroundf(temperature));
       coolantF = std::clamp<int16_t>(coolantF, -512, 511);
     }
 
     vehicleState.coolantTemp = coolantF;
-
-    EventSerial event{};
-    event.type = EVENT_SERIAL_OUT;
-    std::snprintf(event.serialOut.line, sizeof(event.serialOut.line),
-                  "Temperature: %.2f F\n"
-                  "Raw Average: %d\n"
-                  "ADC: %.3f V\n"
-                  "Resistance: %.2f Ohms\n",
-                  temperature, raw, adc_voltage, resistance);
-    xQueueSend(serialQueue, &event, portMAX_DELAY);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
