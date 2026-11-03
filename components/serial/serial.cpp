@@ -137,6 +137,8 @@ void serialTask(void *arg) {
                  event.loraRX.loraPacket.vehicle.runningLights);
           printf("GLOWPLUGS: %d\n", event.loraRX.loraPacket.vehicle.glowPlugs);
           printf("HEATER: %d\n", event.loraRX.loraPacket.vehicle.heater);
+          printf("COOLANT: %d F\n",
+                 static_cast<int>(event.loraRX.loraPacket.vehicle.coolantTemp));
           printf("\n");
         }
         break;
