@@ -249,7 +249,7 @@ void serialTask(void *arg) {
         break;
       }
       case EVENT_SERIAL_OUT: {
-        char *msg = event.serialIn.line;
+        char *msg = event.serialOut.line;
         if (DEBUG) {
           printf("\033[1;34mDEBUG: "
                  "%s\033[0m\n",
