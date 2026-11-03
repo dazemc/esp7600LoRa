@@ -2,6 +2,7 @@
 #include <RadioLib.h>
 #include <hal/ESP-IDF/EspHal.h>
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 #include "lora.h"
 #include "events.h"
@@ -39,8 +40,16 @@ static void countDroppedUiEvent() {
 }
 
 volatile bool receivedFlag = false;
+static TaskHandle_t rxTaskHandle = nullptr;
 
-void onDio1Action(void) { receivedFlag = true; }
+void onDio1Action(void) {
+  receivedFlag = true;
+  BaseType_t woken = pdFALSE;
+  if (rxTaskHandle != nullptr) {
+    vTaskNotifyGiveFromISR(rxTaskHandle, &woken);
+    portYIELD_FROM_ISR(woken);
+  }
+}
 
 esp_err_t initLoRa() {
   ESP_LOGI(TAG, "[SX1262] Initializing ...");
@@ -202,6 +211,7 @@ void checkPacketId(uint8_t packetId) {
 void recvLoRaTask(void *arg) {
   EventDisplay displayEvent{};
   EventSerial serialEvent{};
+  rxTaskHandle = xTaskGetCurrentTaskHandle();
 
   while (true) {
     if (!radioReady) {
@@ -209,56 +219,58 @@ void recvLoRaTask(void *arg) {
       continue;
     }
 
-    if (receivedFlag) {
-      receivedFlag = false;
-      xSemaphoreTake(radioMutex, portMAX_DELAY);
+    // The DIO1 ISR notifies; the timeout only covers a missed edge.
+    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
+    if (!receivedFlag) {
+      continue;
+    }
+    receivedFlag = false;
 
-      uint8_t buffer[sizeof(LoRaCompactPacket)];
-      int state = radio.readData(buffer, sizeof(buffer));
+    xSemaphoreTake(radioMutex, portMAX_DELAY);
 
-      if (state == RADIOLIB_ERR_NONE) {
-        size_t len = radio.getPacketLength();
+    uint8_t buffer[sizeof(LoRaCompactPacket)];
+    int state = radio.readData(buffer, sizeof(buffer));
 
-        if (len != sizeof(LoRaCompactPacket)) {
-          printf("Invalid packet size: %zu\n", len);
-        } else {
-          LoRaCompactPacket packet{};
-          memcpy(&packet, buffer, sizeof(packet));
+    if (state == RADIOLIB_ERR_NONE) {
+      size_t len = radio.getPacketLength();
 
-          checkPacketId(packet.packetId);
-
-          LoRaRawPacket raw{};
-          raw.rssi = static_cast<int>(radio.getRSSI());
-          raw.snr = radio.getSNR();
-
-          displayEvent.type = EVENT_DISPLAY_LORA_RX;
-          LoRaPacket unpackedPacket = unpackPacket(packet);
-          unpackedPacket.vehicle.voltageData.battery =
-              u8ToVoltage(unpackedPacket.vehicle.voltageData.encodedVoltage);
-          displayEvent.loraRX.loraPacket = unpackedPacket;
-          displayEvent.loraRX.loraRawPacket = raw;
-          displayEvent.loraRX.droppedPackets = droppedPackets;
-
-          serialEvent.type = EVENT_SERIAL_LORA_RX;
-          serialEvent.loraRX.loraPacket = unpackedPacket;
-          serialEvent.loraRX.loraRawPacket = raw;
-          serialEvent.loraRX.droppedPackets = droppedPackets;
-
-          if (xQueueSend(serialQueue, &serialEvent, 0) != pdTRUE) {
-            countDroppedUiEvent();
-          }
-          if (xQueueSend(displayQueue, &displayEvent, 0) != pdTRUE) {
-            countDroppedUiEvent();
-          }
-        }
+      if (len != sizeof(LoRaCompactPacket)) {
+        printf("Invalid packet size: %zu\n", len);
       } else {
-        ESP_LOGE(TAG, "readData failed, code %d", state);
-      }
+        LoRaCompactPacket packet{};
+        memcpy(&packet, buffer, sizeof(packet));
 
-      radio.startReceive();
-      xSemaphoreGive(radioMutex);
+        checkPacketId(packet.packetId);
+
+        LoRaRawPacket raw{};
+        raw.rssi = static_cast<int>(radio.getRSSI());
+        raw.snr = radio.getSNR();
+
+        displayEvent.type = EVENT_DISPLAY_LORA_RX;
+        LoRaPacket unpackedPacket = unpackPacket(packet);
+        unpackedPacket.vehicle.voltageData.battery =
+            u8ToVoltage(unpackedPacket.vehicle.voltageData.encodedVoltage);
+        displayEvent.loraRX.loraPacket = unpackedPacket;
+        displayEvent.loraRX.loraRawPacket = raw;
+        displayEvent.loraRX.droppedPackets = droppedPackets;
+
+        serialEvent.type = EVENT_SERIAL_LORA_RX;
+        serialEvent.loraRX.loraPacket = unpackedPacket;
+        serialEvent.loraRX.loraRawPacket = raw;
+        serialEvent.loraRX.droppedPackets = droppedPackets;
+
+        if (xQueueSend(serialQueue, &serialEvent, 0) != pdTRUE) {
+          countDroppedUiEvent();
+        }
+        if (xQueueSend(displayQueue, &displayEvent, 0) != pdTRUE) {
+          countDroppedUiEvent();
+        }
+      }
+    } else {
+      ESP_LOGE(TAG, "readData failed, code %d", state);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(5));
+    radio.startReceive();
+    xSemaphoreGive(radioMutex);
   }
 }
