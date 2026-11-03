@@ -210,14 +210,21 @@ void recvLoRaTask(void *arg) {
 
           checkPacketId(packet.packetId);
 
+          LoRaRawPacket raw{};
+          raw.length = static_cast<int>(len);
+          raw.rssi = static_cast<int>(radio.getRSSI());
+          raw.snr = radio.getSNR();
+
           displayEvent.type = EVENT_DISPLAY_LORA_RX;
           LoRaPacket unpackedPacket = unpackPacket(packet);
           unpackedPacket.vehicle.voltageData.battery =
               u8ToVoltage(unpackedPacket.vehicle.voltageData.encodedVoltage);
           displayEvent.loraRX.loraPacket = unpackedPacket;
+          displayEvent.loraRX.loraRawPacket = raw;
 
           serialEvent.type = EVENT_SERIAL_LORA_RX;
           serialEvent.loraRX.loraPacket = unpackedPacket;
+          serialEvent.loraRX.loraRawPacket = raw;
 
           if (xQueueSend(serialQueue, &serialEvent, 0) != pdTRUE) {
             countDroppedUiEvent();
