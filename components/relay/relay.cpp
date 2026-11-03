@@ -251,7 +251,7 @@ esp_err_t heaterSequence() {
 }
 
 esp_err_t ignSequence() {
-  bool ignState;
+  bool ignState = false;
   esp_err_t err = accSequence();
   if (err != ESP_OK) {
     return err;
@@ -271,9 +271,10 @@ esp_err_t ignSequence() {
     break;
   case ON:
     printf("Vehicle already started!");
-    break;
-  }
-  if (vehicleState.ign == ON) {
+    return ESP_FAIL;
+  default:
+    printf("Invalid ignition state %d\n",
+           static_cast<int>(vehicleState.ign));
     return ESP_FAIL;
   }
 
