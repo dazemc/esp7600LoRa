@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdint.h"
+#include <cstddef>
 #include "freertos/FreeRTOS.h"
 #include "hal/adc_types.h"
 #include "esp_adc/adc_oneshot.h"
@@ -101,6 +102,13 @@ struct LoRaCompactPacket {
   uint16_t encodedCoolantTemperature : 10;
   uint16_t extraData : 6;
 } __attribute__((packed));
+
+// The frame may grow, but it must never gain padding. Bump the size when a
+// field is added and update `.llm/hardware.md` in the same step.
+static_assert(sizeof(LoRaCompactPacket) == 5,
+              "LoRaCompactPacket changed size; update both sides and the docs");
+static_assert(offsetof(LoRaCompactPacket, encodedVoltage) == 2,
+              "LoRaCompactPacket gained padding before byte 2");
 
 struct Telemetry {
   union {
