@@ -62,6 +62,7 @@ struct EventLoRaRX {
   EventLoRaRXType type;
   LoRaRawPacket loraRawPacket;
   LoRaPacket loraPacket;
+  uint32_t droppedPackets;
 };
 
 struct EventDisplay {
