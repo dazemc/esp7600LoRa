@@ -184,6 +184,16 @@ void serialTask(void *arg) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
           queueRelayCommand(EVENT_TOGGLE_HEATER);
+        } else if (!strcmp("ACC", msg)) {
+          if (DEBUG) {
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
+          }
+          queueRelayCommand(EVENT_TOGGLE_ACC);
+        } else if (!strcmp("GLOWPLUGS", msg)) {
+          if (DEBUG) {
+            printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
+          }
+          queueRelayCommand(EVENT_TOGGLE_GLOWPLUGS);
         } else if (!strcmp("ALLOFF", msg)) {
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
