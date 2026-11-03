@@ -36,3 +36,9 @@ stacks — remaining open below)
 3. **`packetToCompactPacket()` uses the global `isVehicle`.** The function
    takes a `LoRaPacket` but sets the bit from `isVehicle`; a cross-role build
    would put the wrong flag on air. Read `loraPacket.isVehicle`.
+4. **`initEventBus()` creates each queue and its task in the same loop.** A
+   task started early can see a later queue as null (the bench hit this on
+   display/serial). Create all queues first, then start the tasks.
+5. **`initRelay()` runs twice.** `app_main()` calls it and `relayTask()` calls
+   it again; the second pass logs "already initialized" warnings. Let the task
+   own the expander, or skip the task-local call.
