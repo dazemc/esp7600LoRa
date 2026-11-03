@@ -55,7 +55,9 @@ extern "C" void app_main() {
   //
   isVehicle = true;
   initSharedAdc();
-  initLoRa();
+  if (initLoRa() != ESP_OK) {
+    printf("main: radio unavailable, continuing\n");
+  }
   initRelay();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 
 inline constexpr long LORA_FREQ = 915E6;
@@ -12,7 +13,7 @@ inline constexpr int LORA_RST = 12;
 inline constexpr int LORA_BUSY = 13;
 inline constexpr int LORA_DIO1 = 14;
 
-void initLoRa();
+esp_err_t initLoRa();
 void sendLoRaTask(void *arg);
 void recvLoRaTask(void *arg);
 void onReceive(int packetSize);
