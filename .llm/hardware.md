@@ -134,7 +134,9 @@ Everything the ESP32 sends to the Pi is one JSON object per line:
 
 `tx` is the vehicle's own transmitted frame: no RSSI/SNR/drop, and `v` is
 the local sensor voltage. `rx` is the base's received copy: it adds RSSI/SNR
-and the drop count, and `v` is decoded from the 8-bit air field (clamped
+and the count of unexpected gaps (duplicates, old/reordered frames, and one
+half-duplex TX collision are excluded), and `v` is decoded from the 8-bit air
+field (clamped
 11–16 V, so a bench input below 11 V reads as 11.0 on the receiver). `c` is
 coolant °F. Both records are emitted for every frame, not gated by `DEBUG`.
 Unknown commands are logged on the console only: the bench link shows TX
