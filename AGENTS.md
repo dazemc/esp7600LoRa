@@ -1,7 +1,8 @@
 # esp7600LoRa
 
-ESP-IDF firmware pair for vehicle telemetry over LoRa, with a SIM7600
-cellular path on the roadmap. Two apps share one `components/` tree:
+ESP-IDF firmware pair for vehicle telemetry over LoRa, with a UART link to
+a Pi Zero W 2 + SIMCom HAT for the cellular backhaul. Two apps share one
+`components/` tree:
 
 - `send/` — vehicle node (`isVehicle = true`): reads vehicle state,
   telemetry task → `loraTXQueue` → LoRa TX task → radio.
@@ -15,8 +16,8 @@ Both sides run the same `event_bus` model: static `EventConfig` tables
 ## Goal
 
 Reliable low-byte-count telemetry link (currently 5-byte packets: 10-bit
-signed coolant °F, 6 spare bits) with a display + serial base and a cellular
-backhaul to come.
+signed coolant °F, 6 spare bits; packed is the invariant, the size may grow)
+with a display + serial base and a Pi-side cellular backhaul over UART.
 Prefer small packet + queue changes over rewrites; keep send/recv sharing
 `components/` rather than forking per-side drivers.
 
@@ -61,7 +62,7 @@ remove them. Do not let the queue rot.
 - Relay outputs through an MCP23017 on I2C1, OLED on I2C0, Pi/serial link
   on UART1. The pin table lives in `.llm/hardware.md`.
 - Base-side Wi-Fi STA uplink (`wifi_sta`) for getting received telemetry
-  off the board.
+  off the board; the Pi Zero W 2 + SIMCom HAT is external and talks UART1.
 
 ## What it is not
 
@@ -75,6 +76,8 @@ remove them. Do not let the queue rot.
 - Not a place for one-sided protocol edits. A packet-format change lands on
   `send` and `recv` in one step, both builds proven, or the link breaks
   silently.
+- Not the cellular side. The Pi Zero W 2 owns the SIMCom HAT and its AT
+  handling; the ESP32 only speaks the UART link.
 
 ## Instruction precedence
 
