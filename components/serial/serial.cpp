@@ -40,6 +40,18 @@ static void initSerial() {
   vTaskDelay(pdMS_TO_TICKS(100));
 }
 
+static void queueRelayCommand(EventToggleType type) {
+  if (relayQueue == nullptr) {
+    printf("Relay command ignored: no relay queue on this node\n");
+    return;
+  }
+  EventToggle event{};
+  event.type = type;
+  if (xQueueSend(relayQueue, &event, portMAX_DELAY) != pdTRUE) {
+    printf("Relay queue full; command dropped\n");
+  }
+}
+
 static void readBuffer() {
   static char line_buffer[MAX_LINE_LENGTH];
   static size_t line_pos = 0;
@@ -148,40 +160,33 @@ void serialTask(void *arg) {
         break;
       }
       case EVENT_SERIAL_IN: {
-
-        EventToggle eventToggle{};
         char *msg = event.serialIn.line;
 
         if (!strcmp("START", msg)) {
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
-          eventToggle.type = EVENT_TOGGLE_IGN;
-          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+          queueRelayCommand(EVENT_TOGGLE_IGN);
         } else if (!strcmp("HEADLIGHTS", msg)) {
-          eventToggle.type = EVENT_TOGGLE_HEADLIGHTS;
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
-          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+          queueRelayCommand(EVENT_TOGGLE_HEADLIGHTS);
         } else if (!strcmp("RUNNINGLIGHTS", msg)) {
-          eventToggle.type = EVENT_TOGGLE_RUNNINGLIGHTS;
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
-          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+          queueRelayCommand(EVENT_TOGGLE_RUNNINGLIGHTS);
         } else if (!strcmp("HEATER", msg)) {
-          eventToggle.type = EVENT_TOGGLE_HEATER;
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
-          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+          queueRelayCommand(EVENT_TOGGLE_HEATER);
         } else if (!strcmp("ALLOFF", msg)) {
-          eventToggle.type = EVENT_TOGGLE_ALL_OFF;
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
-          xQueueSend(relayQueue, &eventToggle, portMAX_DELAY);
+          queueRelayCommand(EVENT_TOGGLE_ALL_OFF);
         } else if (!strcmp("TEST", msg)) {
 
           printf("TEST message received\n");
