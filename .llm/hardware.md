@@ -108,9 +108,17 @@ stack needs a runtime-proven step, not just a clean build.
 
 The Pi Zero W 2 talks to the ESP32 on UART1 (TX 19, RX 20) at 115200,
 leaving the UART0 console free for `idf.py monitor`. Commands are
-newline-terminated ASCII: `START`, `HEADLIGHTS`, `RUNNINGLIGHTS`, `HEATER`,
-`ALLOFF`, `TEST`, `STATE`. `TEST` and `STATE` reply on UART1; boot and debug
-logs stay on the console. The link is bench-verified with the Pi.
+newline-terminated ASCII: `START`, `ACC`, `HEADLIGHTS`, `RUNNINGLIGHTS`,
+`HEATER`, `GLOWPLUGS`, `ALLOFF`, `TEST`, `STATE`. `TEST` and `STATE` reply
+on UART1; boot and debug logs stay on the console. The link is bench-verified
+with the Pi.
+
+## Debug build
+
+`CONFIG_TELEMETRY_DEBUG` (`components/utils/Kconfig.projbuild`) compiles the
+stack/queue and packet logs into the image. It is off in the committed
+`sdkconfig`; set it per app for bench work. Release images drop the branches
+and their strings.
 
 ## Uplink (decision 2026-11-03)
 
