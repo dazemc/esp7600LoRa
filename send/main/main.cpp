@@ -33,7 +33,7 @@ static const EventConfig events[]{
      .queueConfig = &sendLoRaTXQueueConf},
     {.taskConfig = {displayTask, "Display", 3096, NULL, 2, NULL},
      .queueConfig = &displayQueueConf},
-    {.taskConfig = {serialTask, "Serial", 2048, NULL, 2, NULL},
+    {.taskConfig = {serialTask, "Serial", 4096, NULL, 2, NULL},
      .queueConfig = &serialQueueConf},
     {.taskConfig = {relayTask, "Relay", 2048, NULL, 2, NULL},
      .queueConfig = &relayQueueConf},
