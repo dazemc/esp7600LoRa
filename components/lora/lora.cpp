@@ -106,8 +106,8 @@ void sendLoRaTask(void *arg) {
       case EVENT_LORA_TX: {
         if (isVehicle) {
           buildPacket(event);
-        } else {
-          // test packet
+        } else if (DEBUG) {
+          // bench-only test packet; a release base never transmits
           LoRaPacket packet{};
           packet.header.packetId = incrementPacketId(packetIdTX);
           packet.vehicle = {
@@ -118,6 +118,7 @@ void sendLoRaTask(void *arg) {
               .runningLights = false,
               .heater = false,
               .glowPlugs = false,
+              .coolantTemp = 0,
           };
           sendPacketDuplex(packet);
         }
