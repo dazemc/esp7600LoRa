@@ -134,8 +134,9 @@ telemetry.
 SCL 42, address 0x20), parked HIGH = off at boot via `initRelay()`. Expander
 pin → relay: IGN 8, ACC 0, HEADLIGHTS 9, RUNNING_LIGHTS 1, GLOW_PLUGS 10,
 HEATER 2. `relayState()` reads the expander output register back. Glow-plug
-on-time derives from coolant °F, clamped to 1–12 s. Display init never
-aborts: a missing OLED degrades to headless, telemetry first.
+on-time is the curve `(220 − °F) / 20` seconds, clamped to 1–12 s, with a
+1 s floor above 140 °F. Display init never aborts: a missing OLED degrades to
+headless, telemetry first.
 
 ## Wi-Fi provisioning (decision 2026-09-14)
 
