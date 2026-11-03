@@ -206,9 +206,11 @@ console is separate.
 
 - `tx` — the vehicle's own transmitted frame. No RSSI/SNR/drop; `v` is the
   local sensor voltage.
-- `rx` — the base's received copy. Adds RSSI (dBm), SNR (dB), and the
-  cumulative `drop` count; `v` is decoded from the 8-bit air field (clamped
-  11–16 V, so a bench input below 11 V reads as 11.0 on the receiver).
+- `rx` — the base's received copy. Adds RSSI (dBm), SNR (dB), and the count
+  of unexpected gaps (duplicates, old/reordered frames, and one half-duplex
+  TX collision are excluded); `v` is decoded from the 8-bit air field
+  (clamped 11–16 V, so a bench input below 11 V reads as 11.0 on the
+  receiver).
 - `c` is coolant °F. `tx`/`rx` are emitted for every frame, not gated by
   `DEBUG`.
 
