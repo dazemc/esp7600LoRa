@@ -39,7 +39,7 @@ static esp_err_t statusHandler(httpd_req_t *req) {
     esp_ip4addr_ntoa(&s_sta_ip.ip, ipStr, sizeof(ipStr));
   }
   cJSON *root = cJSON_CreateObject();
-  cJSON_AddStringToObject(root, "mode", s_sta_connected ? "sta" : "setup");
+  cJSON_AddStringToObject(root, "mode", s_provisioned ? "sta" : "setup");
   cJSON_AddBoolToObject(root, "sta_connected", s_sta_connected);
   cJSON_AddStringToObject(root, "sta_ssid", provisioned ? ssid : "");
   cJSON_AddBoolToObject(root, "provisioned", provisioned);
@@ -241,36 +241,41 @@ void initWiFi(void) {
   // Netif + event loop
   ESP_ERROR_CHECK(esp_netif_init());
   ESP_ERROR_CHECK(esp_event_loop_create_default());
-  esp_netif_create_default_wifi_sta();
-  esp_netif_create_default_wifi_ap();
+
+  // Choose the mode from NVS before creating the netif: the setup AP exists
+  // only while the base is unprovisioned.
+  char ssid[33] = "";
+  char pass[65] = "";
+  s_provisioned = loadCreds(ssid, sizeof(ssid), pass, sizeof(pass));
+
+  if (s_provisioned) {
+    esp_netif_create_default_wifi_sta();
+  } else {
+    esp_netif_create_default_wifi_ap();
+  }
 
   // WiFi driver
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  // Setup AP is always up (APSTA): provisioning + future Flutter client.
-  wifi_config_t ap_config = {};
-  strncpy((char *)ap_config.ap.ssid, SETUP_AP_SSID,
-          sizeof(ap_config.ap.ssid) - 1);
-  ap_config.ap.ssid_len = strlen(SETUP_AP_SSID);
-  ap_config.ap.max_connection = 4;
-  ap_config.ap.authmode = WIFI_AUTH_OPEN;
-  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
-
-  // STA joins only when provisioned over the REST API.
-  char ssid[33] = "";
-  char pass[65] = "";
-  if (loadCreds(ssid, sizeof(ssid), pass, sizeof(pass))) {
-    s_provisioned = true;
+  if (s_provisioned) {
     wifi_config_t sta_config = {};
     strncpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid) - 1);
     strncpy((char *)sta_config.sta.password, pass,
             sizeof(sta_config.sta.password) - 1);
     sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_LOGI(TAG, "joining provisioned STA %s", ssid);
   } else {
+    wifi_config_t ap_config = {};
+    strncpy((char *)ap_config.ap.ssid, SETUP_AP_SSID,
+            sizeof(ap_config.ap.ssid) - 1);
+    ap_config.ap.ssid_len = strlen(SETUP_AP_SSID);
+    ap_config.ap.max_connection = 4;
+    ap_config.ap.authmode = WIFI_AUTH_OPEN;
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
     ESP_LOGI(TAG, "unprovisioned — join " SETUP_AP_SSID " and POST /api/wifi");
   }
 
