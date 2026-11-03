@@ -43,8 +43,6 @@ struct VoltageData {
 };
 
 struct LoRaRawPacket {
-  uint8_t data[256];
-  int length;
   int rssi;
   float snr;
 };

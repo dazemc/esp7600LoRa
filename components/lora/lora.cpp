@@ -228,7 +228,6 @@ void recvLoRaTask(void *arg) {
           checkPacketId(packet.packetId);
 
           LoRaRawPacket raw{};
-          raw.length = static_cast<int>(len);
           raw.rssi = static_cast<int>(radio.getRSSI());
           raw.snr = radio.getSNR();
 
