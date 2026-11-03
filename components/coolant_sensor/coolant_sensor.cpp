@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <cmath>
+#include <algorithm>
 
 static constexpr float VCC = 3.3f;
 static constexpr float R_FIXED = 1000.0f;
@@ -98,6 +99,12 @@ void thermistorMonitorTask(void *arg) {
     const float adc_voltage = voltage_mv / 1000.0f;
     const float resistance = thermistorResistance(adc_voltage);
     const float temperature = thermistorTemperature(resistance);
+
+    // Engineering value in °F; only the wire conversion packs 10 bits.
+    int16_t coolantF = static_cast<int16_t>(std::lroundf(temperature));
+    coolantF = std::clamp<int16_t>(coolantF, -512, 511);
+
+    vehicleState.coolantTemp = coolantF;
 
     EventSerial event{};
     event.type = EVENT_SERIAL_OUT;
