@@ -27,7 +27,6 @@ static const char *jsonBool(bool value) { return value ? "true" : "false"; }
 
 static void writeUartLine(const char *line) {
   uart_write_bytes(UART_PORT, line, strlen(line));
-  uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
 }
 
 static void initSerial() {
@@ -39,7 +38,8 @@ static void initSerial() {
   uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
   uart_config.source_clk = UART_SCLK_DEFAULT;
 
-  ESP_ERROR_CHECK(uart_driver_install(UART_PORT, BUF_SIZE * 2, 0, 0, NULL, 0));
+  ESP_ERROR_CHECK(
+      uart_driver_install(UART_PORT, BUF_SIZE * 2, BUF_SIZE, 0, NULL, 0));
   ESP_ERROR_CHECK(uart_param_config(UART_PORT, &uart_config));
   ESP_ERROR_CHECK(uart_set_pin(UART_PORT, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE,
                                UART_PIN_NO_CHANGE));
