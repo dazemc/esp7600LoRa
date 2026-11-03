@@ -61,7 +61,7 @@ LoRaCompactPacket packetToCompactPacket(LoRaPacket loraPacket,
   // Caller owns the increment (buildPacket / test branch set header + global
   // once); the air ID must equal the logged header ID.
   packet.packetId = packetId;
-  packet.isVehicle = isVehicle;
+  packet.isVehicle = loraPacket.isVehicle;
   packet.ign = loraPacket.vehicle.ign;
   packet.headlights = loraPacket.vehicle.headlights;
   packet.acc = loraPacket.vehicle.acc;
