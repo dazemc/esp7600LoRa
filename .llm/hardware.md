@@ -126,17 +126,20 @@ the JSON competes with a login prompt. Commands are newline-terminated ASCII:
 Everything the ESP32 sends to the Pi is one JSON object per line:
 
 ```json
+{"t":"tx","id":3,"veh":true,"ign":"ON","head":false,"acc":true,"run":false,"heat":false,"glow":false,"wifi":false,"v":12.60,"c":76}
 {"t":"rx","id":3,"veh":true,"ign":"ON","head":false,"acc":true,"run":false,"heat":false,"glow":false,"wifi":false,"v":12.60,"c":76,"rssi":-65,"snr":9.5,"drop":0}
 {"t":"state","v":12.60,"ign":"ON","head":false,"acc":true,"run":false,"heat":false,"glow":false,"c":76}
 {"t":"pong"}
 ```
 
-`v` is battery volts, `c` is coolant °F, `rssi` is dBm, `snr` is dB, and
-`drop` is the cumulative packet-ID gap count since boot. `rx` is emitted for
-every received frame, not gated by `DEBUG`. Unknown commands are logged on
-the console only: the bench link shows TX echoed into RX, so an unconditional
-reply would feed itself. Boot and debug logs stay on the console. The link is
-bench-verified with the Pi.
+`tx` is the vehicle's own transmitted frame: no RSSI/SNR/drop, and `v` is
+the local sensor voltage. `rx` is the base's received copy: it adds RSSI/SNR
+and the drop count, and `v` is decoded from the 8-bit air field (clamped
+11–16 V, so a bench input below 11 V reads as 11.0 on the receiver). `c` is
+coolant °F. Both records are emitted for every frame, not gated by `DEBUG`.
+Unknown commands are logged on the console only: the bench link shows TX
+echoed into RX, so an unconditional reply would feed itself. Boot and debug
+logs stay on the console. The link is bench-verified with the Pi.
 
 ## Debug build
 
