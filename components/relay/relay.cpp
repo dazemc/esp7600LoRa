@@ -38,10 +38,13 @@ static mcp23x17_t mcp;
 static bool relayReady = false;
 
 esp_err_t initRelay() {
-  ESP_ERROR_CHECK(i2cdev_init());
+  esp_err_t err = i2cdev_init();
+  if (err != ESP_OK) {
+    printf("I2C init failed: %s\n", esp_err_to_name(err));
+    return err;
+  }
 
-  esp_err_t err =
-      mcp23x17_init_desc(&mcp, MCP_ADDR, I2C_PORT, I2C_SDA, I2C_SCL);
+  err = mcp23x17_init_desc(&mcp, MCP_ADDR, I2C_PORT, I2C_SDA, I2C_SCL);
 
   if (err != ESP_OK) {
     printf("MCP descriptor init failed: %s\n", esp_err_to_name(err));
@@ -68,36 +71,6 @@ esp_err_t initRelay() {
   relayReady = true;
   printf("MCP23017 initialized; all relays OFF.\n");
   return ESP_OK;
-}
-
-void testMcp23017Pins() {
-  while (1) {
-    for (uint8_t pin = 0; pin < 16; ++pin) {
-      printf("GPIO %u ON\n", pin);
-
-      ESP_ERROR_CHECK(mcp23x17_set_level(&mcp, pin, 0));
-      vTaskDelay(pdMS_TO_TICKS(1000));
-
-      ESP_ERROR_CHECK(mcp23x17_set_level(&mcp, pin, 1));
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-  }
-}
-
-void testAssignedPins() {
-  while (1) {
-    for (uint8_t pin : relayPins) {
-      mcp23x17_set_level(&mcp, pin, 0);
-      printf("setting pins low\n");
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    for (uint8_t pin : relayPins) {
-      mcp23x17_set_level(&mcp, pin, 1);
-      printf("setting pins high\n");
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-  }
 }
 
 esp_err_t togglePinState(uint8_t pin, bool *newState) {
@@ -248,7 +221,7 @@ esp_err_t heaterSequence() {
 }
 
 esp_err_t ignSequence() {
-  bool ignState;
+  bool ignState = false;
   esp_err_t err = accSequence();
   if (err != ESP_OK) {
     return err;
@@ -268,9 +241,10 @@ esp_err_t ignSequence() {
     break;
   case ON:
     printf("Vehicle already started!");
-    break;
-  }
-  if (vehicleState.ign == ON) {
+    return ESP_FAIL;
+  default:
+    printf("Invalid ignition state %d\n",
+           static_cast<int>(vehicleState.ign));
     return ESP_FAIL;
   }
 

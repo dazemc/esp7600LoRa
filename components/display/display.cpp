@@ -108,12 +108,6 @@ void displayTask(void *arg) {
         offset += snprintf(
             message + offset, sizeof(message) - offset, "%s%s%.4f\n", prepend,
             "VOLTAGE: ", event.loraRX.loraPacket.vehicle.voltageData.battery);
-        offset +=
-            snprintf(message + offset, sizeof(message) - offset, "%s%.4f\n",
-                     "ADC: ", event.loraRX.loraPacket.vehicle.voltageData.adc);
-        offset +=
-            snprintf(message + offset, sizeof(message) - offset, "%s%.4f\n",
-                     "RAW: ", event.loraRX.loraPacket.vehicle.voltageData.raw);
         offset += snprintf(
             message + offset, sizeof(message) - offset, "COOLANT: %d F\n",
             static_cast<int>(event.loraRX.loraPacket.vehicle.coolantTemp));
@@ -129,9 +123,6 @@ void displayTask(void *arg) {
         break;
       }
 
-      case EVENT_DISPLAY_LORA_WIFI:
-      case EVENT_DISPLAY_LORA_TOGGLE:
-        break;
       }
     }
     if (DEBUG) {

@@ -16,7 +16,6 @@ inline constexpr int LORA_DIO1 = 14;
 esp_err_t initLoRa();
 void sendLoRaTask(void *arg);
 void recvLoRaTask(void *arg);
-void onReceive(int packetSize);
 
 extern QueueHandle_t loraTXQueue;
 extern QueueHandle_t loraRXQueue;
