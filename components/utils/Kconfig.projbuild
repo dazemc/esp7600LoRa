@@ -1,0 +1,10 @@
+menu "esp7600LoRa"
+
+config TELEMETRY_DEBUG
+    bool "Enable telemetry debug logs"
+    default n
+    help
+        Compile the stack/queue and packet debug branches into the image.
+        Leave off for release; enable for a bench build.
+
+endmenu

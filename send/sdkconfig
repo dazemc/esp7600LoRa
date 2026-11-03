@@ -984,6 +984,13 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# esp7600LoRa
+#
+# default:
+# CONFIG_TELEMETRY_DEBUG is not set
+# end of esp7600LoRa
+
+#
 # Compiler options
 #
 # default:

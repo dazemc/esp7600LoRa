@@ -7,7 +7,6 @@
 #include "types.h"
 #include "esp_log.h"
 
-bool DEBUG = false;
 const char *TAG = "utils";
 
 uint8_t incrementPacketId(uint8_t &packetId) {
