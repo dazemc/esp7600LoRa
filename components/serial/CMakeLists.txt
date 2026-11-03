@@ -4,10 +4,11 @@ idf_component_register(
   INCLUDE_DIRS
   "."
   REQUIRES
+  types
   events
+  esp_driver_uart
   PRIV_REQUIRES
   utils
   esp_driver_gpio
   event_bus
-  esp_driver_uart
   relay)

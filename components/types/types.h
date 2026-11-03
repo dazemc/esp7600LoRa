@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdint.h"
+#include <cstddef>
 #include "freertos/FreeRTOS.h"
 #include "hal/adc_types.h"
 #include "esp_adc/adc_oneshot.h"
@@ -62,6 +63,7 @@ struct VehicleState {
   bool runningLights;
   bool heater;
   bool glowPlugs;
+  int16_t coolantTemp; // engineering °F; packed to 10 bits on air
 } __attribute__((packed));
 
 extern VehicleState vehicleState;
@@ -79,11 +81,12 @@ struct LoRaPacket {
 } __attribute__((packed));
 
 struct LoRaCompactPacket {
-  // 3 bytes with 4 bits reserved
+  // Byte 0
   uint8_t packetId : 3;
   uint8_t isVehicle : 1;
-  uint8_t _reserved : 4;
+  uint8_t flags : 4;
 
+  // Byte 1
   uint8_t ign : 2;
   uint8_t headlights : 1;
   uint8_t acc : 1;
@@ -92,8 +95,20 @@ struct LoRaCompactPacket {
   uint8_t glowPlugs : 1;
   uint8_t isWifiEnabled : 1;
 
+  // Byte 2
   uint8_t encodedVoltage;
+
+  // Bytes 3-4
+  uint16_t encodedCoolantTemperature : 10;
+  uint16_t extraData : 6;
 } __attribute__((packed));
+
+// The frame may grow, but it must never gain padding. Bump the size when a
+// field is added and update `.llm/hardware.md` in the same step.
+static_assert(sizeof(LoRaCompactPacket) == 5,
+              "LoRaCompactPacket changed size; update both sides and the docs");
+static_assert(offsetof(LoRaCompactPacket, encodedVoltage) == 2,
+              "LoRaCompactPacket gained padding before byte 2");
 
 struct Telemetry {
   union {

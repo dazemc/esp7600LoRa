@@ -33,7 +33,7 @@ static const EventConfig events[]{
      .queueConfig = &sendLoRaTXQueueConf},
     {.taskConfig = {displayTask, "Display", 3096, NULL, 2, NULL},
      .queueConfig = &displayQueueConf},
-    {.taskConfig = {serialTask, "Serial", 2048, NULL, 2, NULL},
+    {.taskConfig = {serialTask, "Serial", 4096, NULL, 2, NULL},
      .queueConfig = &serialQueueConf},
     {.taskConfig = {relayTask, "Relay", 2048, NULL, 2, NULL},
      .queueConfig = &relayQueueConf},
@@ -55,7 +55,9 @@ extern "C" void app_main() {
   //
   isVehicle = true;
   initSharedAdc();
-  initLoRa();
+  if (initLoRa() != ESP_OK) {
+    printf("main: radio unavailable, continuing\n");
+  }
   initRelay();
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));

@@ -15,10 +15,13 @@
 #include <cstdint>
 #include <cstddef>
 #include <cmath>
+#include <algorithm>
 
 static constexpr float VCC = 3.3f;
 static constexpr float R_FIXED = 1000.0f;
 static constexpr int ADC_SAMPLE_COUNT = 32;
+// Sentinel that drives the relay's maximum glow time (12 s).
+static constexpr int16_t COOLANT_FAULT_F = -512;
 
 // Steinhart-Hart coefficients
 static constexpr float STEINHART_A = 2.1854771452e-03f;
@@ -63,7 +66,6 @@ static int readAveragedADC(adc_oneshot_unit_handle_t handle) {
 
 static float thermistorResistance(float voltage) {
   if (voltage <= 0.0f || voltage >= VCC) {
-    ESP_LOGE(TAG, "Invalid ADC voltage: %.3f V", voltage);
     return 0.0f;
   }
   return R_FIXED * voltage / (VCC - voltage);
@@ -97,10 +99,33 @@ void thermistorMonitorTask(void *arg) {
 
     const float adc_voltage = voltage_mv / 1000.0f;
     const float resistance = thermistorResistance(adc_voltage);
-    const float temperature = thermistorTemperature(resistance);
+
+    static bool faultLogged = false;
+    float temperature;
+    int16_t coolantF;
+    if (resistance <= 0.0f) {
+      if (!faultLogged) {
+        ESP_LOGE(TAG, "coolant sensor fault at %.3f V; max-glow fallback",
+                 adc_voltage);
+        faultLogged = true;
+      }
+      temperature = static_cast<float>(COOLANT_FAULT_F);
+      coolantF = COOLANT_FAULT_F;
+    } else {
+      if (faultLogged) {
+        ESP_LOGW(TAG, "coolant sensor recovered");
+        faultLogged = false;
+      }
+      temperature = thermistorTemperature(resistance);
+      // Engineering value in °F; only the wire conversion packs 10 bits.
+      coolantF = static_cast<int16_t>(std::lroundf(temperature));
+      coolantF = std::clamp<int16_t>(coolantF, -512, 511);
+    }
+
+    vehicleState.coolantTemp = coolantF;
 
     EventSerial event{};
-    event.type = EVENT_SERIAL_IN;
+    event.type = EVENT_SERIAL_OUT;
     std::snprintf(event.serialOut.line, sizeof(event.serialOut.line),
                   "Temperature: %.2f F\n"
                   "Raw Average: %d\n"

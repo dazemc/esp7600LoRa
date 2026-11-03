@@ -2,11 +2,11 @@
 #include "stdint.h"
 #include "stddef.h"
 #include "stdio.h"
+#include <algorithm>
 #include "freertos/FreeRTOS.h"
 #include "types.h"
 #include "esp_log.h"
 
-bool DEBUG = true;
 const char *TAG = "utils";
 
 uint8_t incrementPacketId(uint8_t &packetId) {
@@ -26,6 +26,18 @@ void debugRemainingQueue(const char *queueName, char *loc,
                          const uint8_t remaining) {
   snprintf(loc, 64, "\033[1;34mDEBUG: %s queue remaining: %d\033[0m\n",
            queueName, remaining);
+}
+
+// 10-bit two's-complement °F on air; the state itself is engineering °F.
+static uint16_t packCoolantTemperature(int16_t tempF) {
+  const int16_t clamped = std::clamp<int16_t>(tempF, -512, 511);
+  return static_cast<uint16_t>(clamped) & 0x03FF;
+}
+
+static int16_t unpackCoolantTemperature(uint16_t raw) {
+  raw &= 0x03FF;
+  return (raw & 0x0200) ? static_cast<int16_t>(raw | 0xFC00)
+                        : static_cast<int16_t>(raw);
 }
 
 Ignition unpackIgnition(uint8_t ign) {
@@ -58,6 +70,8 @@ LoRaCompactPacket packetToCompactPacket(LoRaPacket loraPacket,
   packet.glowPlugs = loraPacket.vehicle.glowPlugs;
   packet.isWifiEnabled = false;
   packet.encodedVoltage = loraPacket.vehicle.voltageData.encodedVoltage;
+  packet.encodedCoolantTemperature =
+      packCoolantTemperature(loraPacket.vehicle.coolantTemp);
   return packet;
 }
 
@@ -75,6 +89,8 @@ LoRaPacket unpackPacket(LoRaCompactPacket packet) {
   unpacked.vehicle.glowPlugs = packet.glowPlugs;
 
   unpacked.vehicle.voltageData.encodedVoltage = packet.encodedVoltage;
+  unpacked.vehicle.coolantTemp =
+      unpackCoolantTemperature(packet.encodedCoolantTemperature);
 
   return unpacked;
 }

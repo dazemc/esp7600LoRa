@@ -31,6 +31,7 @@
 #include "types.h"
 #include "telemetry.h"
 #include "mcp23x17.h"
+#include <algorithm>
 
 QueueHandle_t relayQueue = nullptr;
 static mcp23x17_t mcp;
@@ -127,23 +128,50 @@ esp_err_t relayState(uint8_t pin, bool *state) {
 }
 
 esp_err_t allOffSequence() {
-  esp_err_t err = ESP_FAIL;
+  esp_err_t firstErr = ESP_OK;
+
   for (uint8_t pin : relayPins) {
-    err = mcp23x17_set_level(&mcp, pin, 1);
+    esp_err_t err = mcp23x17_set_level(&mcp, pin, 1);
     if (err != ESP_OK) {
-      printf("Pin: %d toggle failed: %s\n", pin, esp_err_to_name(err));
+      printf("Pin: %d failed to go off: %s\n", pin, esp_err_to_name(err));
+      if (firstErr == ESP_OK) {
+        firstErr = err;
+      }
+      continue;
+    }
+
+    // Clear only the state whose relay was confirmed OFF.
+    switch (pin) {
+    case IGN:
+      vehicleState.ign = OFF;
+      break;
+    case ACC:
+      vehicleState.acc = false;
+      break;
+    case HEADLIGHTS:
+      vehicleState.headlights = false;
+      break;
+    case RUNNING_LIGHTS:
+      vehicleState.runningLights = false;
+      break;
+    case GLOW_PLUGS:
+      vehicleState.glowPlugs = false;
+      break;
+    case HEATER:
+      vehicleState.heater = false;
+      break;
     }
   }
-  if (err != ESP_OK) {
-    return err;
+
+  return firstErr;
+}
+
+// One °F step per 20 °F below 220 °F; a warm engine gets one second.
+static int glowPlugSeconds(int16_t coolantF) {
+  if (coolantF > 140) {
+    return 1;
   }
-  vehicleState.acc = false;
-  vehicleState.glowPlugs = false;
-  vehicleState.ign = OFF;
-  vehicleState.headlights = false;
-  vehicleState.runningLights = false;
-  vehicleState.heater = false;
-  return ESP_OK;
+  return std::clamp((220 - coolantF) / 20, 1, 12);
 }
 
 esp_err_t glowPlugSequence() {
@@ -159,13 +187,18 @@ esp_err_t glowPlugSequence() {
       return err;
     }
   }
+
+  const int toggleTime = glowPlugSeconds(vehicleState.coolantTemp);
+
   err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
 
   if (err != ESP_OK) {
     printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
     return err;
   }
-  vTaskDelay(pdMS_TO_TICKS(4000));
+
+  vTaskDelay(pdMS_TO_TICKS(toggleTime * 1000));
+
   err = togglePinState(GLOW_PLUGS, &vehicleState.glowPlugs);
   if (err != ESP_OK) {
     printf("GLOW_PLUGS toggle failed: %s\n", esp_err_to_name(err));
@@ -215,9 +248,14 @@ esp_err_t heaterSequence() {
 esp_err_t ignSequence() {
   bool ignState;
   esp_err_t err = accSequence();
-  runningLightsSequence();
   if (err != ESP_OK) {
     return err;
+  }
+
+  // Running lights are not a start prerequisite; report and continue.
+  err = runningLightsSequence();
+  if (err != ESP_OK) {
+    printf("RUNNING_LIGHTS failed: %s\n", esp_err_to_name(err));
   }
   switch (vehicleState.ign) {
   case OFF:
@@ -233,7 +271,13 @@ esp_err_t ignSequence() {
   if (vehicleState.ign == ON) {
     return ESP_FAIL;
   }
-  glowPlugSequence();
+
+  err = glowPlugSequence();
+  if (err != ESP_OK) {
+    printf("GLOW_PLUGS failed; aborting start: %s\n", esp_err_to_name(err));
+    return err;
+  }
+
   err = togglePinState(IGN, &ignState);
   if (err != ESP_OK) {
     printf("IGN first toggle failed: %s\n", esp_err_to_name(err));
@@ -241,6 +285,7 @@ esp_err_t ignSequence() {
   }
   vehicleState.ign = START;
 
+  // need to check alternator and/or rpm
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   err = togglePinState(IGN, &ignState);

@@ -20,11 +20,15 @@ static const char *TAG = "voltage";
 
 uint8_t voltageToU8(float voltage) {
   if (voltage < V_MIN) {
-    ESP_LOGE(TAG, "Battery far below safe threshold %f\n", voltage);
+    if (DEBUG) {
+      ESP_LOGE(TAG, "Battery far below safe threshold %f\n", voltage);
+    }
     voltage = V_MIN;
   }
   if (voltage > V_MAX) {
-    ESP_LOGE(TAG, "Battery far above safe threshold %f\n", voltage);
+    if (DEBUG) {
+      ESP_LOGE(TAG, "Battery far above safe threshold %f\n", voltage);
+    }
     voltage = V_MAX;
   }
   return (uint8_t)((voltage - V_MIN) * 255.0f / (V_MAX - V_MIN));

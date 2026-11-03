@@ -1,9 +1,15 @@
 #pragma once
+#include "sdkconfig.h"
 #include "stdint.h"
 #include "stdio.h"
 #include "types.h"
 
-extern bool DEBUG;
+#ifdef CONFIG_TELEMETRY_DEBUG
+constexpr bool DEBUG = true;
+#else
+constexpr bool DEBUG = false;
+#endif
+
 extern bool isVehicle;
 
 void debugRemainingStackSize(const char *taskName, char *loc,
