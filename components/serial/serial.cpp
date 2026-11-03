@@ -23,6 +23,13 @@ const char *ignitionToString(Ignition ign) {
   }
 }
 
+static const char *jsonBool(bool value) { return value ? "true" : "false"; }
+
+static void writeUartLine(const char *line) {
+  uart_write_bytes(UART_PORT, line, strlen(line));
+  uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
+}
+
 static void initSerial() {
   uart_config_t uart_config = {};
   uart_config.baud_rate = BAUD;
@@ -122,26 +129,32 @@ void serialTask(void *arg) {
         }
         break;
       }
-      case EVENT_SERIAL_LORA_RX:
+      case EVENT_SERIAL_LORA_RX: {
+        const EventLoRaRX &rx = event.loraRX;
+        const LoRaPacket &p = rx.loraPacket;
+        char json[320];
+        int len = snprintf(
+            json, sizeof(json),
+            "{\"t\":\"rx\",\"id\":%u,\"veh\":%s,\"ign\":\"%s\",\"head\":%s,"
+            "\"acc\":%s,\"run\":%s,\"heat\":%s,\"glow\":%s,\"wifi\":%s,"
+            "\"v\":%.2f,\"c\":%d,\"rssi\":%d,\"snr\":%.1f,\"drop\":%u}\n",
+            static_cast<unsigned>(p.header.packetId), jsonBool(p.isVehicle),
+            ignitionToString(p.vehicle.ign), jsonBool(p.vehicle.headlights),
+            jsonBool(p.vehicle.acc), jsonBool(p.vehicle.runningLights),
+            jsonBool(p.vehicle.heater), jsonBool(p.vehicle.glowPlugs),
+            jsonBool(p.isWifi),
+            static_cast<double>(p.vehicle.voltageData.battery),
+            static_cast<int>(p.vehicle.coolantTemp), rx.loraRawPacket.rssi,
+            static_cast<double>(rx.loraRawPacket.snr),
+            static_cast<unsigned>(rx.droppedPackets));
+        if (len > 0 && len < static_cast<int>(sizeof(json))) {
+          writeUartLine(json);
+        }
         if (DEBUG) {
-          printf("RX recv: ");
-          printf("PacketId: %d\n", event.loraRX.loraPacket.header.packetId);
-          printf("Voltage: %f\n",
-                 event.loraRX.loraPacket.vehicle.voltageData.battery);
-          printf("ACC: %d\n", event.loraRX.loraPacket.vehicle.acc);
-          printf("IGN: ");
-          printf("%s\n", ignitionToString(event.loraRX.loraPacket.vehicle.ign));
-          printf("HEADLIGHTS: %d\n",
-                 event.loraRX.loraPacket.vehicle.headlights);
-          printf("RUNNING_LIGHTS: %d\n",
-                 event.loraRX.loraPacket.vehicle.runningLights);
-          printf("GLOWPLUGS: %d\n", event.loraRX.loraPacket.vehicle.glowPlugs);
-          printf("HEATER: %d\n", event.loraRX.loraPacket.vehicle.heater);
-          printf("COOLANT: %d F\n",
-                 static_cast<int>(event.loraRX.loraPacket.vehicle.coolantTemp));
-          printf("\n");
+          printf("%s", json);
         }
         break;
+      }
       case EVENT_SERIAL_LORA_WIFI:
       case EVENT_SERIAL_LORA_TOGGLE:
         break;
