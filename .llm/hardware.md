@@ -109,9 +109,22 @@ stack needs a runtime-proven step, not just a clean build.
 The Pi Zero W 2 talks to the ESP32 on UART1 (TX 19, RX 20) at 115200,
 leaving the UART0 console free for `idf.py monitor`. Commands are
 newline-terminated ASCII: `START`, `ACC`, `HEADLIGHTS`, `RUNNINGLIGHTS`,
-`HEATER`, `GLOWPLUGS`, `ALLOFF`, `TEST`, `STATE`. `TEST` and `STATE` reply
-on UART1; boot and debug logs stay on the console. The link is bench-verified
-with the Pi.
+`HEATER`, `GLOWPLUGS`, `ALLOFF`, `TEST`, `STATE`.
+
+Everything the ESP32 sends to the Pi is one JSON object per line:
+
+```json
+{"t":"rx","id":3,"veh":true,"ign":"ON","head":false,"acc":true,"run":false,"heat":false,"glow":false,"wifi":false,"v":12.60,"c":76,"rssi":-65,"snr":9.5,"drop":0}
+{"t":"state","v":12.60,"ign":"ON","head":false,"acc":true,"run":false,"heat":false,"glow":false,"c":76}
+{"t":"pong"}
+```
+
+`v` is battery volts, `c` is coolant °F, `rssi` is dBm, `snr` is dB, and
+`drop` is the cumulative packet-ID gap count since boot. `rx` is emitted for
+every received frame, not gated by `DEBUG`. Unknown commands are logged on
+the console only: the bench link shows TX echoed into RX, so an unconditional
+reply would feed itself. Boot and debug logs stay on the console. The link is
+bench-verified with the Pi.
 
 ## Debug build
 
