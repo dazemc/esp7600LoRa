@@ -45,19 +45,32 @@ void onDio1Action(void) { receivedFlag = true; }
 esp_err_t initLoRa() {
   ESP_LOGI(TAG, "[SX1262] Initializing ...");
   radioMutex = xSemaphoreCreateMutex();
-
-  int state = radio.begin(915.0);
-
-  if (state != RADIOLIB_ERR_NONE) {
-    ESP_LOGE(TAG, "failed, code %d; continuing without radio", state);
+  if (radioMutex == nullptr) {
+    ESP_LOGE(TAG, "failed to create radio mutex");
     return ESP_FAIL;
   }
 
-  radio.setSyncWord(0x14);
-  radio.setDio1Action(onDio1Action);
-  radio.startReceive();
-  radioReady = true;
+  int state = radio.begin(static_cast<float>(LORA_FREQ) / 1000000.0f);
+  if (state != RADIOLIB_ERR_NONE) {
+    ESP_LOGE(TAG, "begin failed, code %d; continuing without radio", state);
+    return ESP_FAIL;
+  }
 
+  state = radio.setSyncWord(0x14);
+  if (state != RADIOLIB_ERR_NONE) {
+    ESP_LOGE(TAG, "sync word failed, code %d; continuing without radio", state);
+    return ESP_FAIL;
+  }
+
+  radio.setDio1Action(onDio1Action);
+  state = radio.startReceive();
+  if (state != RADIOLIB_ERR_NONE) {
+    ESP_LOGE(TAG, "startReceive failed, code %d; continuing without radio",
+             state);
+    return ESP_FAIL;
+  }
+
+  radioReady = true;
   ESP_LOGI(TAG, "success!");
   return ESP_OK;
 }
