@@ -210,6 +210,19 @@ static void wifiEventHandler(void *arg, esp_event_base_t event_base,
   }
 }
 
+void resetWiFiCredentials(void) {
+  nvs_handle_t h;
+  if (nvs_open("esp7600", NVS_READWRITE, &h) == ESP_OK) {
+    nvs_erase_key(h, "sta_ssid");
+    nvs_erase_key(h, "sta_pass");
+    nvs_commit(h);
+    nvs_close(h);
+  }
+  ESP_LOGW(TAG, "Wi-Fi credentials erased; restarting into setup AP");
+  vTaskDelay(pdMS_TO_TICKS(200));
+  esp_restart();
+}
+
 void initWiFi(void) {
   // NVS
   esp_err_t ret = nvs_flash_init();

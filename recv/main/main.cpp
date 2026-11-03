@@ -43,4 +43,5 @@ extern "C" void app_main() {
   initSemaphores(semaphores, sizeof(semaphores) / sizeof(semaphores[0]));
   initEventBus(events, sizeof(events) / sizeof(events[0]));
   initWiFi();
+  setWiFiResetHandler(resetWiFiCredentials);
 }

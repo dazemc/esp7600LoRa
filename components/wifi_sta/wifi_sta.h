@@ -7,3 +7,4 @@
 #define SETUP_AP_SSID "esp7600LoRa-setup"
 
 void initWiFi(void);
+void resetWiFiCredentials(void);

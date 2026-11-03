@@ -9,6 +9,9 @@
 
 QueueHandle_t serialQueue = nullptr;
 static uint8_t serialBuffer[BUF_SIZE];
+static void (*wifiResetHandler)() = nullptr;
+
+void setWiFiResetHandler(void (*handler)()) { wifiResetHandler = handler; }
 
 const char *ignitionToString(Ignition ign) {
   switch (ign) {
@@ -204,6 +207,12 @@ void serialTask(void *arg) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);
           }
           queueRelayCommand(EVENT_TOGGLE_GLOWPLUGS);
+        } else if (!strcmp("WIFI_RESET", msg)) {
+          if (wifiResetHandler != nullptr) {
+            wifiResetHandler();
+          } else {
+            printf("WIFI_RESET unavailable on this node\n");
+          }
         } else if (!strcmp("ALLOFF", msg)) {
           if (DEBUG) {
             printf("\033[1;34mDEBUG: Command received: '%s'\033[0m\n", msg);

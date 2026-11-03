@@ -11,6 +11,7 @@
 #define MAX_LINE_LENGTH 128
 
 void serialTask(void *arg);
+void setWiFiResetHandler(void (*handler)());
 
 const char *ignitionToString(Ignition ign);
 extern QueueHandle_t serialQueue;
