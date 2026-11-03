@@ -35,6 +35,15 @@ them is bench-verified; keep the native USB port unplugged while UART1 is in
 use. GPIO17/18 are the UART1 defaults and are claimed by the OLED, which is
 why the Pi link sits on 19/20.
 
+## Bench peer
+
+The second node on the bench is a Heltec WiFi LoRa 32 V2 (ESP32-D0WDQ6,
+SX1276, 8 MB flash, `/dev/ttyUSB1`) running a throwaway ESP-IDF peer app.
+It uses 915 MHz, sync word 0x14, and the same 5-byte frame. Cross-family
+SX1262/SX1276 traffic is verified both ways: the S3 receiver sees about
+−22 dBm / 11 dB SNR, and the peer sees the S3 sender at about −43 dBm /
+13 dB SNR. The peer lives in `/tmp`, not in this tree.
+
 ## Flash and partitions
 
 Both boards carry an 8 MB flash (`esptool flash_id` reports manufacturer
