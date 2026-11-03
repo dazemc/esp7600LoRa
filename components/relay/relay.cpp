@@ -128,23 +128,42 @@ esp_err_t relayState(uint8_t pin, bool *state) {
 }
 
 esp_err_t allOffSequence() {
-  esp_err_t err = ESP_FAIL;
+  esp_err_t firstErr = ESP_OK;
+
   for (uint8_t pin : relayPins) {
-    err = mcp23x17_set_level(&mcp, pin, 1);
+    esp_err_t err = mcp23x17_set_level(&mcp, pin, 1);
     if (err != ESP_OK) {
-      printf("Pin: %d toggle failed: %s\n", pin, esp_err_to_name(err));
+      printf("Pin: %d failed to go off: %s\n", pin, esp_err_to_name(err));
+      if (firstErr == ESP_OK) {
+        firstErr = err;
+      }
+      continue;
+    }
+
+    // Clear only the state whose relay was confirmed OFF.
+    switch (pin) {
+    case IGN:
+      vehicleState.ign = OFF;
+      break;
+    case ACC:
+      vehicleState.acc = false;
+      break;
+    case HEADLIGHTS:
+      vehicleState.headlights = false;
+      break;
+    case RUNNING_LIGHTS:
+      vehicleState.runningLights = false;
+      break;
+    case GLOW_PLUGS:
+      vehicleState.glowPlugs = false;
+      break;
+    case HEATER:
+      vehicleState.heater = false;
+      break;
     }
   }
-  if (err != ESP_OK) {
-    return err;
-  }
-  vehicleState.acc = false;
-  vehicleState.glowPlugs = false;
-  vehicleState.ign = OFF;
-  vehicleState.headlights = false;
-  vehicleState.runningLights = false;
-  vehicleState.heater = false;
-  return ESP_OK;
+
+  return firstErr;
 }
 
 // One °F step per 20 °F below 220 °F; a warm engine gets one second.
