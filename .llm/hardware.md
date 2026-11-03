@@ -14,7 +14,9 @@ pin, or relay code.
   temperature, Relay, Telemetry.
 - `recv/` (base, `isVehicle = false`): LoRa RX → `displayQueue` +
   `serialQueue`, plus `wifi_sta` (APSTA provisioning + STA uplink, see Wi-Fi
-  provisioning below). Tasks: LoRa RX, LoRa TX, Display, Serial.
+  provisioning below). Tasks: LoRa RX, LoRa TX, Display, Serial. The Pi Zero
+  W 2 + SIMCom HAT sits on UART1 as the cellular uplink; it is external to
+  this tree.
 - Both share `components/` via `EXTRA_COMPONENT_DIRS ../components/`.
 
 ## Pin map (ESP32-S3)
@@ -73,6 +75,10 @@ channel 4 (`×5.6` to battery volts); thermistor on ADC1 channel 1 with a
 format change lands on both sides in one step, both builds proven, and this
 file updated in the same phase.
 
+The frame may grow; the invariant is the packed byte layout, not the current
+5-byte size. Every addition updates both sides, the size assert in `types.h`,
+and the table above in the same step.
+
 ## Queues
 
 All queues length 10. Vehicle RX/TX item sizes follow `EventLoRaRX` /
@@ -85,17 +91,19 @@ stack needs a runtime-proven step, not just a clean build.
 
 ## Serial link (decision 2026-11-03)
 
-The Pi/modem talks to the ESP32 on UART1 (TX 19, RX 20) at 115200, leaving
-the UART0 console free for `idf.py monitor`. Commands are newline-terminated
-ASCII: `START`, `HEADLIGHTS`, `RUNNINGLIGHTS`, `HEATER`, `ALLOFF`, `TEST`,
-`STATE`. `TEST` and `STATE` reply on UART1; boot and debug logs stay on the
-console. The link is bench-verified with the Pi.
+The Pi Zero W 2 talks to the ESP32 on UART1 (TX 19, RX 20) at 115200,
+leaving the UART0 console free for `idf.py monitor`. Commands are
+newline-terminated ASCII: `START`, `HEADLIGHTS`, `RUNNINGLIGHTS`, `HEATER`,
+`ALLOFF`, `TEST`, `STATE`. `TEST` and `STATE` reply on UART1; boot and debug
+logs stay on the console. The link is bench-verified with the Pi.
 
-## SIM7600 roadmap
+## Uplink (decision 2026-11-03)
 
-Cellular backhaul is planned, not yet in the tree. When it lands it gets
-its own component (never inline AT chatter in `main.cpp`) and its own
-`.llm/` note update.
+The cellular backhaul is a Pi Zero W 2 with a SIMCom HAT, external to this
+tree. The ESP32 speaks to it over UART1 (TX 19, RX 20) using the command
+and telemetry protocol above; no cellular code, AT parsing, or SIM
+credentials live here. The base also keeps its own Wi-Fi STA path for local
+telemetry.
 
 ## Relay (decision 2026-09-14, MCP23017 rewire 2026-10)
 
